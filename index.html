@@ -527,41 +527,38 @@ let usePaidApi = false;
 
 /* ── 필드 한국어 레이블 ── */
 const FIELD_KO = {
-  bizrno:             '사업자등록번호',
-  entrprs_nm:         '상호명',
-  ceoNm:              '대표자',
-  adres:              '주소(지번)',
-  rdnmadr:            '도로명주소',
-  telno:              '전화번호',
-  faxno:              '팩스번호',
-  zip_cd:             '우편번호',
-  bzdo:               '업종',
-  bizcnd:             '업태',
-  corp_no:            '법인등록번호',
-  enpEstblDt:         '설립일',
-  bsnsStateCode:      '사업자상태코드',
-  bsnsSttus:          '사업자상태',
-  enpPbanCmpnyDvsnCd: '사업자구분',
-  lat:                '위도',
-  lon:                '경도',
-  phn_no:             '핸드폰번호',
-  hmgPg:              '홈페이지',
-  tno_1st:            '통신판매업신고번호',
-  ind_nm:             '업종명',
-  sector:             '업태명',
-  openDt:             '개업일',
-  closeDt:            '폐업일',
-  taxType:            '과세유형',
-  _status:            '조회상태',
+  bno:        '사업자등록번호',
+  company:    '상호명',
+  ceo:        '대표자',
+  adres:      '주소(지번)',
+  rdnmadr:    '도로명주소',
+  telno:      '전화번호',
+  faxno:      '팩스번호',
+  zip_cd:     '우편번호',
+  bzdo:       '업종',
+  bizcnd:     '업태',
+  cno:        '법인등록번호',
+  enpEstblDt: '설립일',
+  BsttCd:     '사업자상태코드',
+  bstt:       '사업자상태',
+  TaxTypeCd:  '과세유형코드',
+  taxtype:    '과세유형',
+  EndDt:      '폐업일',
+  openDt:     '개업일',
+  lat:        '위도',
+  lon:        '경도',
+  hmgPg:      '홈페이지',
+  tno_1st:    '통신판매업신고번호',
+  _status:    '조회상태',
 };
 
 /* 우선 표시 순서 */
 const FIELD_ORDER = [
-  'bizrno','entrprs_nm','ceoNm','bsnsSttus','bsnsStateCode',
-  'enpPbanCmpnyDvsnCd','corp_no','enpEstblDt','openDt','closeDt',
+  'bno','company','ceo','bstt','BsttCd',
+  'taxtype','TaxTypeCd','cno','enpEstblDt','openDt','EndDt',
   'zip_cd','adres','rdnmadr',
-  'telno','faxno','phn_no','hmgPg',
-  'bzdo','bizcnd','ind_nm','sector','taxType',
+  'telno','faxno','hmgPg',
+  'bzdo','bizcnd',
   'tno_1st','lat','lon',
 ];
 
@@ -726,14 +723,14 @@ async function callBizno(query, gb) {
   const key  = document.getElementById('apiKey').value.trim();
   if (!key) throw new Error('API 키가 입력되지 않았습니다.');
   const base = usePaidApi ? BIZNO_PAID : BIZNO_FREE;
-  const url  = `${base}?key=${encodeURIComponent(key)}&gb=${gb}&query=${encodeURIComponent(query)}&type=json`;
+  const url  = `${base}?key=${encodeURIComponent(key)}&gb=${gb}&q=${encodeURIComponent(query)}&type=json`;
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const text = await resp.text();
   try { return JSON.parse(text); } catch { throw new Error('응답 파싱 실패 (JSON 형식 아님)'); }
 }
 
-/* gb=1: 상호명 검색 / gb=2: 사업자등록번호 조회 */
+/* gb=1: 사업자등록번호 조회 / gb=3: 상호명 검색 */
 
 function parseItems(data) {
   /* items가 배열이 아닐 수 있음 (빈 문자열 "", null 등) */
@@ -749,14 +746,14 @@ function checkApiError(data) {
 }
 
 async function searchByName(name) {
-  const data = await callBizno(name, 1);   /* gb=1 = 상호명 검색 */
+  const data = await callBizno(name, 3);   /* gb=3 = 상호명 검색 */
   checkApiError(data);
   return parseItems(data);
 }
 
 async function getDetail(bizno) {
-  const data = await callBizno(bizno, 2);  /* gb=2 = 사업자등록번호 조회 */
-  console.group(`[BiznoAPI] gb=2 · ${bizno}`);
+  const data = await callBizno(bizno, 1);  /* gb=1 = 사업자등록번호 조회 */
+  console.group(`[BiznoAPI] gb=1 · ${bizno}`);
   console.log('raw response:', data);
   console.groupEnd();
 
@@ -792,12 +789,12 @@ function showDisambig(items) {
       <div class="disambig-candidates">
         ${candidates.slice(0, 10).map(c => `
           <label class="disambig-option">
-            <input type="radio" name="d_${rowIdx}" value="${esc(c.bizrno || '')}" />
+            <input type="radio" name="d_${rowIdx}" value="${esc(c.bno || '')}" />
             <div class="disambig-option-info">
-              <div class="disambig-option-name">${esc(c.entrprs_nm || c.bizrno || '-')}</div>
+              <div class="disambig-option-name">${esc(c.company || c.bno || '-')}</div>
               <div class="disambig-option-detail">
-                사업자등록번호: ${esc(c.bizrno || '-')}
-                ${c.ceoNm  ? ' · 대표자: ' + esc(c.ceoNm)  : ''}
+                사업자등록번호: ${esc(c.bno || '-')}
+                ${c.ceo  ? ' · 대표자: ' + esc(c.ceo)  : ''}
                 ${(c.adres || c.rdnmadr) ? ' · ' + esc(c.adres || c.rdnmadr) : ''}
               </div>
             </div>
@@ -929,7 +926,7 @@ async function runQuery() {
     } else if (r.candidates.length === 0) {
       nameFailed.push({ rowIdx: r.rowIdx, row: r.row, reason: '검색 결과 없음' });
     } else if (r.candidates.length === 1) {
-      nameResolved.push({ rowIdx: r.rowIdx, row: r.row, bizno: r.candidates[0].bizrno });
+      nameResolved.push({ rowIdx: r.rowIdx, row: r.row, bizno: r.candidates[0].bno });
     } else {
       const picked = disambigSel[r.rowIdx];
       if (picked) nameResolved.push({ rowIdx: r.rowIdx, row: r.row, bizno: picked });

@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>비즈노라 사업자정보 조회</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --color-primary:       #0A0A0A;
+      --color-on-primary:    #FFFFFF;
+      --color-canvas:        #FFFFFF;
+      --color-surface:       #F5F5F5;
+      --color-surface-soft:  #FAFAFA;
+      --color-hairline:      #E5E5E5;
+      --color-hairline-soft: #F0F0F0;
+      --color-ink:           #1A1A1A;
+      --color-charcoal:      #404040;
+      --color-steel:         #888888;
+      --color-stone:         #A0A0A0;
+      --color-muted:         #C0C0C0;
+      --color-brand-coral:     #FF4B2B;
+      --color-brand-blue:      #2563EB;
+      --color-brand-blue-deep: #1D4ED8;
+      --color-brand-blue-200:  #BFDBFE;
+      --color-brand-blue-700:  #1E40AF;
+      --color-success-bg:   #DCFCE7;
+      --color-success-text: #166534;
+      --color-warn-bg:      #FEF9C3;
+      --color-warn-text:    #854D0E;
+      --color-closed-bg:    #FEE2E2;
+      --color-closed-text:  #991B1B;
+      --color-error-bg:     #F3E8FF;
+      --color-error-text:   #6B21A8;
+      --space-xs:  8px;
+      --space-sm:  12px;
+      --space-md:  16px;
+      --space-lg:  20px;
+      --space-xl:  24px;
+      --space-xxl: 32px;
+      --rounded-sm:   6px;
+      --rounded-md:   8px;
+      --rounded-lg:   12px;
+      --rounded-xl:   16px;
+      --rounded-full: 9999px;
+      --font: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--color-surface-soft);
+      min-height: 100vh;
+      color: var(--color-ink);
+    }
+
+    /* ── Version Chip ── */
+    .ver-chip {
+      position: fixed; bottom: 20px; left: 20px; z-index: 100;
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px 6px 8px;
+      background: var(--color-primary); color: var(--color-on-primary);
+      border-radius: var(--rounded-full);
+      cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 600;
+      box-shadow: rgba(0,0,0,0.18) 0px 4px 12px;
+      transition: background .15s, transform .1s;
+      border: none; user-select: none;
+    }
+    .ver-chip:hover  { background: #2a2a2a; transform: translateY(-1px); }
+    .ver-chip:active { transform: translateY(0); }
+    .ver-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-brand-coral); flex-shrink: 0; }
+
+    /* ── Version Modal ── */
+    .ver-modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.45);
+      align-items: flex-end; justify-content: flex-start;
+      padding: 0 0 68px 20px;
+    }
+    .ver-modal-overlay.open { display: flex; }
+    .ver-modal {
+      background: var(--color-canvas); border-radius: var(--rounded-xl);
+      border: 1px solid var(--color-hairline);
+      box-shadow: rgba(36,36,36,0.12) 0px 12px 24px -4px;
+      width: 320px; max-height: 70vh; overflow-y: auto;
+      animation: slideUp .18s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .ver-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-hairline);
+      position: sticky; top: 0; background: var(--color-canvas);
+    }
+    .ver-modal-title { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
+    .ver-modal-close { background: transparent; border: none; color: var(--color-steel); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; border-radius: var(--rounded-full); transition: color .15s; }
+    .ver-modal-close:hover { color: var(--color-ink); }
+    .ver-modal-body { padding: var(--space-md) var(--space-lg) var(--space-lg); }
+    .ver-entry { margin-bottom: var(--space-lg); }
+    .ver-entry:last-child { margin-bottom: 0; }
+    .ver-entry-head { display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-xs); }
+    .ver-num { font-size: 0.8125rem; font-weight: 700; color: var(--color-ink); }
+    .ver-new-badge { background: var(--color-brand-coral); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: var(--rounded-full); }
+    .ver-date { font-size: 0.75rem; color: var(--color-stone); margin-left: auto; }
+    .ver-entry ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .ver-entry li { font-size: 0.8125rem; color: var(--color-charcoal); line-height: 1.5; padding-left: var(--space-md); position: relative; }
+    .ver-entry li::before { content: ''; position: absolute; left: 4px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: var(--color-hairline); }
+    .ver-entry + .ver-entry { border-top: 1px solid var(--color-hairline-soft); padding-top: var(--space-lg); }
+
+    /* ── Header ── */
+    .header {
+      background: var(--color-primary); color: var(--color-on-primary);
+      padding: var(--space-xxl) var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .header h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.5px; line-height: 1.2; }
+    .header p { margin-top: var(--space-xs); font-size: 0.875rem; color: rgba(255,255,255,0.52); }
+
+    /* ── Layout ── */
+    .container { max-width: 840px; margin: var(--space-xxl) auto; padding: 0 var(--space-md) var(--space-xxl); display: flex; flex-direction: column; gap: var(--space-md); }
+
+    /* ── Card ── */
+    .card { background: var(--color-canvas); border-radius: var(--rounded-xl); border: 1px solid var(--color-hairline); box-shadow: rgba(0,0,0,0.04) 0px 1px 2px 0px; overflow: hidden; }
+    .card-header { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md) var(--space-xl); background: var(--color-surface); border-bottom: 1px solid var(--color-hairline); }
+    .step-badge { background: var(--color-primary); color: var(--color-on-primary); border-radius: var(--rounded-full); width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+    .step-badge.done { background: var(--color-brand-coral); }
+    .step-badge.warn { background: var(--color-warn-text); }
+    .card-header h2 { font-size: 0.9375rem; font-weight: 600; color: var(--color-ink); }
+    .card-body { padding: var(--space-xl); }
+
+    /* ── Form ── */
+    label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--color-charcoal); margin-bottom: var(--space-xs); }
+    .input-wrap { display: flex; border: 1px solid var(--color-hairline); border-radius: var(--rounded-md); overflow: hidden; transition: box-shadow .15s, border-color .15s; }
+    .input-wrap:focus-within { box-shadow: 0 0 0 3px rgba(37,99,235,.12); border-color: var(--color-brand-blue); }
+    .input-wrap input { flex: 1; border: none; outline: none; padding: 10px var(--space-md); font-size: 0.9375rem; font-family: var(--font); background: transparent; color: var(--color-ink); }
+    .toggle-btn { background: var(--color-surface); border: none; border-left: 1px solid var(--color-hairline); padding: 0 var(--space-md); cursor: pointer; font-size: 1rem; transition: background .15s; }
+    .toggle-btn:hover { background: var(--color-hairline); }
+
+    /* ── API Type Toggle ── */
+    .api-toggle-row {
+      display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--color-surface); border-radius: var(--rounded-md); border: 1px solid var(--color-hairline-soft);
+    }
+    .api-toggle-label { font-size: 0.8125rem; color: var(--color-charcoal); font-weight: 500; }
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: var(--color-hairline); border-radius: var(--rounded-full); transition: background .2s; }
+    .slider::before { content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    input:checked + .slider { background: var(--color-brand-blue); }
+    input:checked + .slider::before { transform: translateX(18px); }
+    .api-badge { font-size: 0.6875rem; font-weight: 700; padding: 2px 8px; border-radius: var(--rounded-full); }
+    .api-badge.free { background: var(--color-success-bg); color: var(--color-success-text); }
+    .api-badge.paid { background: var(--color-brand-blue-200); color: var(--color-brand-blue-700); }
+    .api-info-text { font-size: 0.75rem; color: var(--color-stone); margin-left: auto; }
+
+    /* ── File area ── */
+    .file-area {
+      border: 2px dashed var(--color-hairline); border-radius: var(--rounded-lg);
+      padding: var(--space-xxl) var(--space-xl); text-align: center;
+      cursor: pointer; transition: border-color .15s, background .15s; position: relative;
+    }
+    .file-area:hover, .file-area.drag-over { border-color: var(--color-primary); background: var(--color-surface); }
+    .file-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .file-area .file-icon { font-size: 2rem; margin-bottom: var(--space-xs); }
+    .file-area p  { font-size: 0.875rem; color: var(--color-steel); }
+    .file-name {
+      display: none; align-items: center; gap: var(--space-xs); margin-top: var(--space-sm);
+      padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-md);
+      background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: var(--rounded-full);
+    }
+    .file-name-text { flex: 1; font-size: 0.8125rem; font-weight: 500; color: var(--color-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-remove-btn { flex-shrink: 0; background: transparent; border: none; color: var(--color-steel); cursor: pointer; font-size: 14px; line-height: 1; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: var(--rounded-full); transition: background .15s, color .15s; }
+    .file-remove-btn:hover { background: var(--color-closed-bg); color: var(--color-closed-text); }
+
+    select { width: 100%; padding: 10px var(--space-md); border: 1px solid var(--color-hairline); border-radius: var(--rounded-md); font-size: 0.9375rem; font-family: var(--font); outline: none; transition: box-shadow .15s, border-color .15s; background: var(--color-canvas); color: var(--color-ink); }
+    select:focus { box-shadow: 0 0 0 3px rgba(37,99,235,.12); border-color: var(--color-brand-blue); }
+
+    .col-selectors { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-top: var(--space-md); }
+    .hint { font-size: 0.75rem; color: var(--color-steel); margin-top: var(--space-xs); }
+
+    /* ── Buttons ── */
+    .btn-run { width: 100%; padding: 13px var(--space-xl); background: var(--color-primary); color: var(--color-on-primary); border: none; border-radius: var(--rounded-full); font-size: 0.9375rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s, transform .1s; }
+    .btn-run:hover:not(:disabled) { background: #2a2a2a; }
+    .btn-run:active:not(:disabled) { transform: scale(0.98); }
+    .btn-run:disabled { background: var(--color-hairline); color: var(--color-muted); cursor: not-allowed; }
+
+    /* ── Progress ── */
+    .progress-wrap { display: none; margin-top: var(--space-lg); }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--color-steel); margin-bottom: var(--space-xs); }
+    .progress-bar-bg { background: var(--color-hairline); border-radius: var(--rounded-full); height: 6px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: var(--color-brand-coral); border-radius: var(--rounded-full); transition: width .3s ease; width: 0%; }
+
+    /* ── Disambiguation ── */
+    .disambig-item { border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); overflow: hidden; margin-bottom: var(--space-md); }
+    .disambig-item:last-of-type { margin-bottom: 0; }
+    .disambig-item-header { padding: var(--space-sm) var(--space-md); background: var(--color-warn-bg); border-bottom: 1px solid var(--color-hairline); font-size: 0.8125rem; }
+    .disambig-item-header strong { color: var(--color-warn-text); }
+    .disambig-item-header span { color: var(--color-charcoal); }
+    .disambig-option { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-hairline-soft); cursor: pointer; transition: background .15s; }
+    .disambig-option:hover { background: var(--color-surface-soft); }
+    .disambig-option input[type=radio] { flex-shrink: 0; margin-top: 3px; cursor: pointer; accent-color: var(--color-brand-blue); }
+    .disambig-option-info { flex: 1; }
+    .disambig-option-name { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
+    .disambig-option-detail { font-size: 0.75rem; color: var(--color-steel); margin-top: 2px; line-height: 1.5; }
+    .disambig-skip { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; transition: background .15s; background: var(--color-surface-soft); }
+    .disambig-skip:hover { background: var(--color-surface); }
+    .disambig-skip span { font-size: 0.8125rem; color: var(--color-stone); }
+    .disambig-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-lg); }
+    .btn-auto-select { padding: 9px var(--space-lg); background: transparent; color: var(--color-charcoal); border: 1px solid var(--color-hairline); border-radius: var(--rounded-full); font-size: 0.8125rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: border-color .15s, color .15s; }
+    .btn-auto-select:hover { border-color: var(--color-charcoal); color: var(--color-ink); }
+    .btn-confirm-disambig { flex: 1; padding: 9px var(--space-lg); background: var(--color-primary); color: var(--color-on-primary); border: none; border-radius: var(--rounded-full); font-size: 0.8125rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s; }
+    .btn-confirm-disambig:hover { background: #2a2a2a; }
+
+    /* ── Alerts ── */
+    .alert { padding: var(--space-sm) var(--space-md); border-radius: var(--rounded-md); font-size: 0.8125rem; line-height: 1.5; margin-top: var(--space-sm); display: none; white-space: pre-line; }
+    .alert-error   { background: var(--color-closed-bg);   color: #991B1B; border: 1px solid #FECACA; }
+    .alert-warning { background: var(--color-warn-bg);     color: #854D0E; border: 1px solid #FDE68A; }
+    .alert-info    { background: var(--color-brand-blue-200); color: var(--color-brand-blue-700); border: 1px solid #93C5FD; }
+
+    /* ── Results ── */
+    .result-section { display: none; }
+    .result-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .result-header h3 { font-size: 0.9375rem; font-weight: 600; color: var(--color-ink); }
+    .btn-download { padding: 9px var(--space-lg); background: var(--color-primary); color: var(--color-on-primary); border: none; border-radius: var(--rounded-full); font-size: 0.8125rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s; }
+    .btn-download:hover { background: #2a2a2a; }
+    .stats { display: flex; gap: var(--space-xs); flex-wrap: wrap; margin-bottom: var(--space-md); }
+    .stat-pill { padding: 4px var(--space-sm); border-radius: var(--rounded-full); font-size: 0.75rem; font-weight: 600; }
+    .pill-total   { background: var(--color-surface); color: var(--color-charcoal); border: 1px solid var(--color-hairline); }
+    .pill-success { background: var(--color-success-bg); color: var(--color-success-text); }
+    .pill-error   { background: var(--color-error-bg);   color: var(--color-error-text); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    thead th { background: var(--color-surface); color: var(--color-steel); padding: var(--space-sm) var(--space-md); text-align: left; white-space: nowrap; font-size: 0.75rem; font-weight: 600; position: sticky; top: 0; }
+    tbody tr:nth-child(even) { background: var(--color-surface-soft); }
+    tbody tr:hover           { background: var(--color-surface); }
+    tbody td { padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-hairline-soft); white-space: nowrap; color: var(--color-charcoal); max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+    .max-rows-note { font-size: 0.75rem; color: var(--color-stone); text-align: right; margin-top: var(--space-xs); }
+
+    /* ── Login ── */
+    #loginScreen { position: fixed; inset: 0; z-index: 10000; background: var(--color-canvas); display: flex; align-items: center; justify-content: center; }
+    .login-card { width: 100%; max-width: 380px; padding: 40px var(--space-xl); border: 1px solid var(--color-hairline); border-radius: var(--rounded-xl); text-align: center; }
+    .login-card h2 { font-size: 1.25rem; font-weight: 600; color: var(--color-ink); margin-bottom: var(--space-xs); }
+    .login-card > p { font-size: 0.875rem; color: var(--color-steel); margin-bottom: var(--space-lg); }
+    .login-error { display: none; font-size: 0.8125rem; color: #dc2626; margin-top: var(--space-xs); text-align: left; }
+    .btn-login { width: 100%; margin-top: var(--space-md); padding: 12px var(--space-xl); background: var(--color-primary); color: var(--color-on-primary); border: none; border-radius: var(--rounded-full); font-size: 0.9375rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s; }
+    .btn-login:hover { background: #2a2a2a; }
+
+    @media (max-width: 600px) {
+      .header h1    { font-size: 1.375rem; }
+      .container    { gap: var(--space-sm); margin: var(--space-xl) auto; }
+      .card-body    { padding: var(--space-md); }
+      .col-selectors { grid-template-columns: 1fr; }
+      .ver-chip     { bottom: 14px; left: 14px; }
+      .ver-modal    { width: calc(100vw - 28px); }
+      .ver-modal-overlay { padding: 0 0 60px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div style="font-size:2rem; margin-bottom:var(--space-md);">🔍</div>
+    <h2>비즈노라 사업자정보 조회</h2>
+    <p>접속하려면 비밀번호를 입력하세요</p>
+    <div class="input-wrap">
+      <input type="password" id="loginPwd" placeholder="비밀번호" autocomplete="current-password" />
+      <button class="toggle-btn" onclick="toggleLoginPwd()">👁</button>
+    </div>
+    <div class="login-error" id="loginError">비밀번호가 올바르지 않습니다.</div>
+    <button class="btn-login" onclick="submitLogin()">입장하기</button>
+  </div>
+</div>
+
+<!-- ── Version Chip ── -->
+<button class="ver-chip" onclick="openVerModal()">
+  <span class="ver-chip-dot"></span>
+  v1.0.0
+</button>
+
+<!-- ── Version Modal ── -->
+<div class="ver-modal-overlay" id="verModalOverlay" onclick="handleOverlayClick(event)">
+  <div class="ver-modal">
+    <div class="ver-modal-head">
+      <span class="ver-modal-title">업데이트 내역</span>
+      <button class="ver-modal-close" onclick="closeVerModal()">✕</button>
+    </div>
+    <div class="ver-modal-body" id="verModalBody"></div>
+  </div>
+</div>
+
+<!-- ── Header ── -->
+<div class="header">
+  <h1>비즈노라 사업자정보 조회</h1>
+  <p>bizno.net API 기반 사업자 상세정보 일괄 조회 서비스</p>
+</div>
+
+<div class="container">
+
+  <!-- Step 1: API 설정 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">1</div>
+      <h2>API 설정</h2>
+    </div>
+    <div class="card-body">
+      <label for="apiKey">비즈노라 API 키</label>
+      <div class="input-wrap">
+        <input type="password" id="apiKey" placeholder="API 키를 입력하세요" autocomplete="off" />
+        <button class="toggle-btn" onclick="toggleApiKey()">👁</button>
+      </div>
+      <div class="api-toggle-row">
+        <span class="api-toggle-label">API 유형:</span>
+        <label class="switch" style="margin-bottom:0;">
+          <input type="checkbox" id="paidApiToggle" onchange="onApiTypeChange()" />
+          <span class="slider"></span>
+        </label>
+        <span class="api-badge free" id="apiBadge">무료 API (fapi)</span>
+        <span class="api-info-text">유료 전환 시 더 많은 필드 조회 가능</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 파일 업로드 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">2</div>
+      <h2>엑셀 파일 업로드 및 열 선택</h2>
+    </div>
+    <div class="card-body">
+      <div class="file-area" id="fileArea">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+        <div class="file-icon">📂</div>
+        <p>클릭하거나 파일을 드래그하여 업로드하세요<br><small>(.xlsx / .xls)</small></p>
+      </div>
+      <div class="file-name" id="fileNameEl">
+        <span class="file-name-text" id="fileNameText"></span>
+        <button class="file-remove-btn" onclick="clearFile()">✕</button>
+      </div>
+
+      <div id="colSelectWrap" style="margin-top:16px; display:none;">
+        <div class="col-selectors">
+          <div>
+            <label for="biznoCol">사업자등록번호 열
+              <span style="color:var(--color-stone); font-weight:400;"> (선택)</span>
+            </label>
+            <select id="biznoCol" onchange="checkRunReady()">
+              <option value="">-- 선택 안 함 --</option>
+            </select>
+          </div>
+          <div>
+            <label for="nameCol">회사명 열
+              <span style="color:var(--color-stone); font-weight:400;"> (선택)</span>
+            </label>
+            <select id="nameCol" onchange="checkRunReady()">
+              <option value="">-- 선택 안 함 --</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">사업자등록번호가 있는 행은 직접 조회, 없는 행은 회사명으로 검색 후 조회합니다. 최소 하나의 열을 선택하세요.</p>
+      </div>
+
+      <div class="alert alert-error" id="fileAlert"></div>
+    </div>
+  </div>
+
+  <!-- Step 3: 실행 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">3</div>
+      <h2>조회 실행</h2>
+    </div>
+    <div class="card-body">
+      <button class="btn-run" id="runBtn" disabled onclick="runQuery()">🔍 조회 시작</button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label">
+          <span id="progressText">처리 중...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+      </div>
+      <div class="alert alert-error" id="runAlert"></div>
+      <div class="alert alert-info"  id="runInfo"></div>
+    </div>
+  </div>
+
+  <!-- 중복 결과 선택 -->
+  <div class="card" id="disambigSection" style="display:none;">
+    <div class="card-header">
+      <div class="step-badge warn">!</div>
+      <h2>회사명 검색 — 중복 결과 선택 필요</h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.8125rem; color:var(--color-steel); margin-bottom:var(--space-lg);">
+        아래 항목은 회사명 검색 결과가 여러 건입니다. 올바른 사업자를 선택한 뒤 <strong>선택 완료</strong>를 눌러 주세요.
+      </p>
+      <div id="disambigList"></div>
+      <div class="disambig-actions">
+        <button class="btn-auto-select" onclick="autoSelectFirst()">모두 첫 번째로 자동 선택</button>
+        <button class="btn-confirm-disambig" onclick="confirmDisambig()">선택 완료 → 조회 계속 ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="card result-section" id="resultSection">
+    <div class="card-header">
+      <div class="step-badge done">✓</div>
+      <h2>조회 결과</h2>
+    </div>
+    <div class="card-body">
+      <div class="result-header">
+        <h3 id="resultTitle">조회 완료</h3>
+        <button class="btn-download" onclick="downloadResult()">⬇ 결과 다운로드 (XLSX)</button>
+      </div>
+      <div class="stats" id="statsWrap"></div>
+      <div class="table-wrap">
+        <table>
+          <thead id="resultHead"></thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+      <p class="max-rows-note" id="maxRowsNote"></p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════
+   버전 관리
+   ════════════════════════════════════ */
+const VERSION_HISTORY = [
+  {
+    version: '1.0.0',
+    date: '2026-05-13',
+    changes: [
+      'bizno.net API 기반 사업자 상세정보 일괄 조회 서비스 출시',
+      '엑셀 업로드 후 사업자등록번호/회사명 열 선택으로 일괄 처리',
+      '사업자등록번호 없는 경우 회사명으로 자동 검색 후 상세 조회',
+      '회사명 중복 결과 발생 시 사용자 직접 선택 UI (disambiguation)',
+      '무료(fapi)/유료(papi) API 전환 토글 — 유료 전환 시 더 많은 필드 제공',
+      'API 응답 필드 동적 테이블 표시 — 무료/유료 차이 자동 반영',
+      '결과 XLSX 다운로드 (한국어 컬럼명 자동 변환)',
+    ]
+  }
+];
+
+function renderVerModal() {
+  document.getElementById('verModalBody').innerHTML = VERSION_HISTORY.map((v, i) => `
+    <div class="ver-entry">
+      <div class="ver-entry-head">
+        <span class="ver-num">v${v.version}</span>
+        ${i === 0 ? '<span class="ver-new-badge">NEW</span>' : ''}
+        <span class="ver-date">${v.date}</span>
+      </div>
+      <ul>${v.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+}
+function openVerModal()  { renderVerModal(); document.getElementById('verModalOverlay').classList.add('open'); document.addEventListener('keydown', onVerKey); }
+function closeVerModal() { document.getElementById('verModalOverlay').classList.remove('open'); document.removeEventListener('keydown', onVerKey); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('verModalOverlay')) closeVerModal(); }
+function onVerKey(e) { if (e.key === 'Escape') closeVerModal(); }
+
+/* ════════════════════════════════════
+   상태
+   ════════════════════════════════════ */
+let sheetData       = [];
+let headers         = [];
+let resultRows      = [];
+let disambigResolve = null;
+const MAX_PREVIEW   = 30;
+
+const BIZNO_FREE = 'https://bizno.net/api/fapi';
+const BIZNO_PAID = 'https://bizno.net/api/papi';
+let usePaidApi = false;
+
+/* ── 필드 한국어 레이블 ── */
+const FIELD_KO = {
+  bizrno:             '사업자등록번호',
+  entrprs_nm:         '상호명',
+  ceoNm:              '대표자',
+  adres:              '주소(지번)',
+  rdnmadr:            '도로명주소',
+  telno:              '전화번호',
+  faxno:              '팩스번호',
+  zip_cd:             '우편번호',
+  bzdo:               '업종',
+  bizcnd:             '업태',
+  corp_no:            '법인등록번호',
+  enpEstblDt:         '설립일',
+  bsnsStateCode:      '사업자상태코드',
+  bsnsSttus:          '사업자상태',
+  enpPbanCmpnyDvsnCd: '사업자구분',
+  lat:                '위도',
+  lon:                '경도',
+  phn_no:             '핸드폰번호',
+  hmgPg:              '홈페이지',
+  tno_1st:            '통신판매업신고번호',
+  ind_nm:             '업종명',
+  sector:             '업태명',
+  openDt:             '개업일',
+  closeDt:            '폐업일',
+  taxType:            '과세유형',
+  _status:            '조회상태',
+};
+
+/* 우선 표시 순서 */
+const FIELD_ORDER = [
+  'bizrno','entrprs_nm','ceoNm','bsnsSttus','bsnsStateCode',
+  'enpPbanCmpnyDvsnCd','corp_no','enpEstblDt','openDt','closeDt',
+  'zip_cd','adres','rdnmadr',
+  'telno','faxno','phn_no','hmgPg',
+  'bzdo','bizcnd','ind_nm','sector','taxType',
+  'tno_1st','lat','lon',
+];
+
+/* ════════════════════════════════════
+   유틸
+   ════════════════════════════════════ */
+function esc(s)             { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showAlert(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+function hideAlert(el)      { el.style.display = 'none'; }
+function sleep(ms)          { return new Promise(r => setTimeout(r, ms)); }
+
+function normalizeBizno(val) {
+  if (val === null || val === undefined) return '';
+  return String(val).replace(/[^0-9]/g, '').padStart(10, '0').slice(0, 10);
+}
+
+/* ════════════════════════════════════
+   로그인
+   ════════════════════════════════════ */
+const LOGIN_KEY = 'bizno_auth_v1';
+const LOGIN_PWD = 'gallup1974';
+
+(function initLogin() {
+  if (localStorage.getItem(LOGIN_KEY) === '1') {
+    document.getElementById('loginScreen').style.display = 'none';
+    return;
+  }
+  document.getElementById('loginPwd').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+})();
+
+function submitLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === LOGIN_PWD) {
+    localStorage.setItem(LOGIN_KEY, '1');
+    document.getElementById('loginScreen').style.display = 'none';
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginPwd').value = '';
+    document.getElementById('loginPwd').focus();
+  }
+}
+function toggleLoginPwd() {
+  const el = document.getElementById('loginPwd');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* ════════════════════════════════════
+   API 설정
+   ════════════════════════════════════ */
+function toggleApiKey() {
+  const el = document.getElementById('apiKey');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function onApiTypeChange() {
+  usePaidApi = document.getElementById('paidApiToggle').checked;
+  const badge = document.getElementById('apiBadge');
+  if (usePaidApi) { badge.textContent = '유료 API (papi)'; badge.className = 'api-badge paid'; }
+  else            { badge.textContent = '무료 API (fapi)'; badge.className = 'api-badge free'; }
+}
+
+/* ════════════════════════════════════
+   파일 처리
+   ════════════════════════════════════ */
+const fileArea      = document.getElementById('fileArea');
+const fileInput     = document.getElementById('fileInput');
+const fileNameEl    = document.getElementById('fileNameEl');
+const fileNameText  = document.getElementById('fileNameText');
+const fileAlert     = document.getElementById('fileAlert');
+const colSelectWrap = document.getElementById('colSelectWrap');
+const biznoColSel   = document.getElementById('biznoCol');
+const nameColSel    = document.getElementById('nameCol');
+
+fileArea.addEventListener('dragover',  e => { e.preventDefault(); fileArea.classList.add('drag-over'); });
+fileArea.addEventListener('dragleave', () => fileArea.classList.remove('drag-over'));
+fileArea.addEventListener('drop', e => {
+  e.preventDefault(); fileArea.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  hideAlert(fileAlert);
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls'].includes(ext)) {
+    showAlert(fileAlert, '⚠️ .xlsx 또는 .xls 파일만 지원합니다.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb  = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      let hdrIdx = 0;
+      for (let i = 0; i < Math.min(raw.length, 20); i++) {
+        if ((raw[i] || []).filter(c => c !== null && c !== undefined && String(c).trim() !== '').length >= 2) {
+          hdrIdx = i; break;
+        }
+      }
+      headers = (raw[hdrIdx] || []).map((h, idx) => {
+        const s = (h !== null && h !== undefined) ? String(h).trim() : '';
+        return s === '' ? `열${idx + 1}` : s;
+      });
+      sheetData = raw.slice(hdrIdx + 1)
+        .filter(row => row && row.some(c => c !== null && c !== undefined && String(c).trim() !== ''))
+        .map(row => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; });
+          return obj;
+        });
+
+      if (sheetData.length === 0) { showAlert(fileAlert, '⚠️ 파일에 데이터가 없습니다.'); return; }
+
+      const optBase  = '<option value="">-- 선택 안 함 --</option>';
+      const optItems = headers.slice(0, 12).map((h, i) =>
+        `<option value="${esc(h)}">${String.fromCharCode(65 + i)}열: ${esc(h)}</option>`
+      ).join('');
+      biznoColSel.innerHTML = optBase + optItems;
+      nameColSel.innerHTML  = optBase + optItems;
+
+      /* 자동 감지 */
+      headers.forEach(h => {
+        if (/사업자|등록번호|bizrno|b_no|biz/i.test(h))      biznoColSel.value = h;
+        else if (/회사|상호|업체|기업|company|name/i.test(h)) nameColSel.value  = h;
+      });
+
+      colSelectWrap.style.display = 'block';
+      fileNameText.textContent    = `📄 ${file.name}  (${sheetData.length.toLocaleString()} 행)`;
+      fileNameEl.style.display    = 'flex';
+      checkRunReady();
+    } catch (err) {
+      showAlert(fileAlert, '⚠️ 파일 파싱 오류: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearFile() {
+  sheetData = []; headers = [];
+  fileInput.value = '';
+  fileNameEl.style.display    = 'none';
+  fileNameText.textContent    = '';
+  colSelectWrap.style.display = 'none';
+  biznoColSel.innerHTML = '<option value="">-- 선택 안 함 --</option>';
+  nameColSel.innerHTML  = '<option value="">-- 선택 안 함 --</option>';
+  hideAlert(fileAlert);
+  checkRunReady();
+}
+
+function checkRunReady() {
+  document.getElementById('runBtn').disabled =
+    !(sheetData.length > 0 && (biznoColSel.value !== '' || nameColSel.value !== ''));
+}
+
+/* ════════════════════════════════════
+   API 호출
+   ════════════════════════════════════ */
+async function callBizno(query, gb) {
+  const key  = document.getElementById('apiKey').value.trim();
+  if (!key) throw new Error('API 키가 입력되지 않았습니다.');
+  const base = usePaidApi ? BIZNO_PAID : BIZNO_FREE;
+  const url  = `${base}?key=${encodeURIComponent(key)}&gb=${gb}&query=${encodeURIComponent(query)}&type=json`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const text = await resp.text();
+  try { return JSON.parse(text); } catch { throw new Error('응답 파싱 실패 (JSON 형식 아님)'); }
+}
+
+async function searchByName(name) {
+  const data = await callBizno(name, 2);
+  return Array.isArray(data.items) ? data.items : [];
+}
+
+async function getDetail(bizno) {
+  const data  = await callBizno(bizno, 1);
+  const items = Array.isArray(data.items) ? data.items : [];
+  return items[0] || null;
+}
+
+/* ════════════════════════════════════
+   Disambiguation UI
+   ════════════════════════════════════ */
+function showDisambig(items) {
+  const list = document.getElementById('disambigList');
+  list.innerHTML = items.map(({ rowIdx, name, candidates }) => `
+    <div class="disambig-item" data-ridx="${rowIdx}">
+      <div class="disambig-item-header">
+        <strong>검색어: "${esc(name)}"</strong>
+        <span> — ${candidates.length}개의 결과가 검색되었습니다</span>
+      </div>
+      <div class="disambig-candidates">
+        ${candidates.slice(0, 10).map(c => `
+          <label class="disambig-option">
+            <input type="radio" name="d_${rowIdx}" value="${esc(c.bizrno || '')}" />
+            <div class="disambig-option-info">
+              <div class="disambig-option-name">${esc(c.entrprs_nm || c.bizrno || '-')}</div>
+              <div class="disambig-option-detail">
+                사업자등록번호: ${esc(c.bizrno || '-')}
+                ${c.ceoNm  ? ' · 대표자: ' + esc(c.ceoNm)  : ''}
+                ${(c.adres || c.rdnmadr) ? ' · ' + esc(c.adres || c.rdnmadr) : ''}
+              </div>
+            </div>
+          </label>
+        `).join('')}
+        <label class="disambig-skip">
+          <input type="radio" name="d_${rowIdx}" value="" />
+          <span>이 항목 건너뛰기</span>
+        </label>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('disambigSection').style.display = 'block';
+  document.getElementById('disambigSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  return new Promise(resolve => { disambigResolve = resolve; });
+}
+
+function autoSelectFirst() {
+  document.querySelectorAll('#disambigList .disambig-item').forEach(item => {
+    const ridx   = item.dataset.ridx;
+    const radios = [...item.querySelectorAll(`input[name="d_${ridx}"]`)];
+    const first  = radios.find(r => r.value !== '');
+    if (first) { radios.forEach(r => r.checked = false); first.checked = true; }
+  });
+}
+
+function confirmDisambig() {
+  if (!disambigResolve) return;
+  const sel = {};
+  document.querySelectorAll('#disambigList .disambig-item').forEach(item => {
+    const ridx    = parseInt(item.dataset.ridx);
+    const checked = item.querySelector('input[type=radio]:checked');
+    sel[ridx] = checked ? checked.value : '';
+  });
+  document.getElementById('disambigSection').style.display = 'none';
+  disambigResolve(sel);
+  disambigResolve = null;
+}
+
+/* ════════════════════════════════════
+   프로그레스
+   ════════════════════════════════════ */
+function setProgress(text, pct) {
+  document.getElementById('progressText').textContent = text;
+  document.getElementById('progressPct').textContent  = Math.round(pct) + '%';
+  document.getElementById('progressFill').style.width = Math.round(pct) + '%';
+}
+
+/* ════════════════════════════════════
+   메인 조회
+   ════════════════════════════════════ */
+async function runQuery() {
+  const runAlert = document.getElementById('runAlert');
+  const runInfo  = document.getElementById('runInfo');
+  hideAlert(runAlert); hideAlert(runInfo);
+  document.getElementById('resultSection').style.display   = 'none';
+  document.getElementById('disambigSection').style.display = 'none';
+  resultRows = [];
+
+  const biznoCol = biznoColSel.value;
+  const nameCol  = nameColSel.value;
+
+  if (!document.getElementById('apiKey').value.trim()) {
+    showAlert(runAlert, '⚠️ API 키를 입력해 주세요.');
+    return;
+  }
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  setProgress('준비 중...', 0);
+
+  /* ── 행 분류 ── */
+  const directRows = []; // { rowIdx, row, bizno }
+  const nameRows   = []; // { rowIdx, row, name }
+  const skipRows   = []; // { rowIdx, row, reason }
+
+  sheetData.forEach((row, idx) => {
+    const bizno = biznoCol ? normalizeBizno(row[biznoCol]) : '';
+    const name  = nameCol  ? String(row[nameCol] ?? '').trim() : '';
+    if (bizno.length === 10) {
+      directRows.push({ rowIdx: idx, row, bizno });
+    } else if (name) {
+      nameRows.push({ rowIdx: idx, row, name });
+    } else {
+      skipRows.push({ rowIdx: idx, row, reason: '사업자등록번호/회사명 없음' });
+    }
+  });
+
+  /* ── Phase 1: 회사명 검색 ── */
+  const nameResults = [];
+  for (let i = 0; i < nameRows.length; i++) {
+    const { rowIdx, row, name } = nameRows[i];
+    setProgress(`[1/2] 회사명 검색 (${i + 1}/${nameRows.length}): ${name}`, (i / (nameRows.length || 1)) * 40);
+    try {
+      const candidates = await searchByName(name);
+      nameResults.push({ rowIdx, row, name, candidates });
+    } catch (e) {
+      if (e instanceof TypeError) {
+        document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('runBtn').disabled = false;
+        checkRunReady();
+        showAlert(runAlert,
+          '⛔ CORS 오류: 브라우저에서 bizno.net API에 직접 접근이 차단되었습니다.\n' +
+          '→ 서버 프록시(예: Netlify Functions)를 통해 호출해야 합니다.');
+        return;
+      }
+      nameResults.push({ rowIdx, row, name, candidates: [], fetchError: e.message });
+    }
+    if (i < nameRows.length - 1) await sleep(300);
+  }
+
+  /* ── Disambiguation ── */
+  const needsDisambig = nameResults.filter(r => r.candidates && r.candidates.length > 1);
+  let disambigSel = {};
+  if (needsDisambig.length > 0) {
+    document.getElementById('progressWrap').style.display = 'none';
+    disambigSel = await showDisambig(needsDisambig);
+    document.getElementById('progressWrap').style.display = 'block';
+  }
+
+  /* ── 회사명 결과 → bizno 확정 ── */
+  const nameResolved = [];
+  const nameFailed   = [];
+  for (const r of nameResults) {
+    if (r.fetchError) {
+      nameFailed.push({ rowIdx: r.rowIdx, row: r.row, reason: `검색 오류: ${r.fetchError}` });
+    } else if (r.candidates.length === 0) {
+      nameFailed.push({ rowIdx: r.rowIdx, row: r.row, reason: '검색 결과 없음' });
+    } else if (r.candidates.length === 1) {
+      nameResolved.push({ rowIdx: r.rowIdx, row: r.row, bizno: r.candidates[0].bizrno });
+    } else {
+      const picked = disambigSel[r.rowIdx];
+      if (picked) nameResolved.push({ rowIdx: r.rowIdx, row: r.row, bizno: picked });
+      else        nameFailed.push({ rowIdx: r.rowIdx, row: r.row, reason: '선택 안 함 (건너뜀)' });
+    }
+  }
+
+  /* ── Phase 2: 상세 조회 ── */
+  const allLookup = [
+    ...directRows.map(d => ({ rowIdx: d.rowIdx, row: d.row, bizno: d.bizno })),
+    ...nameResolved,
+  ];
+
+  const detailMap = {};
+  for (let i = 0; i < allLookup.length; i++) {
+    const { rowIdx, bizno } = allLookup[i];
+    setProgress(`[2/2] 상세 조회 (${i + 1}/${allLookup.length}): ${bizno}`, 40 + (i / (allLookup.length || 1)) * 58);
+    try {
+      const detail = await getDetail(bizno);
+      detailMap[rowIdx] = { detail };
+    } catch (e) {
+      if (e instanceof TypeError) {
+        document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('runBtn').disabled = false;
+        checkRunReady();
+        showAlert(runAlert,
+          '⛔ CORS 오류: 브라우저에서 bizno.net API에 직접 접근이 차단되었습니다.\n' +
+          '→ 서버 프록시(예: Netlify Functions)를 통해 호출해야 합니다.');
+        return;
+      }
+      detailMap[rowIdx] = { error: e.message };
+    }
+    if (i < allLookup.length - 1) await sleep(300);
+  }
+
+  setProgress('완료!', 100);
+
+  /* ── 결과 빌드 ── */
+  const failMap = {};
+  [...skipRows, ...nameFailed].forEach(f => { failMap[f.rowIdx] = f.reason; });
+
+  /* API 응답 필드 동적 수집 */
+  const apiFieldSet = new Set();
+  Object.values(detailMap).forEach(d => {
+    if (d.detail) Object.keys(d.detail).forEach(k => apiFieldSet.add(k));
+  });
+  const apiFields = sortFields([...apiFieldSet]);
+
+  resultRows = sheetData.map((row, idx) => {
+    const entry  = detailMap[idx];
+    const reason = failMap[idx];
+    const base   = { ...row };
+    if (entry && entry.detail) return { ...base, ...entry.detail, _status: '성공' };
+    if (entry && entry.error)  return { ...base, _status: `실패: ${entry.error}` };
+    if (reason)                return { ...base, _status: reason };
+    return { ...base, _status: '알 수 없음' };
+  });
+
+  setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 800);
+
+  const successCnt = Object.values(detailMap).filter(d => d.detail).length;
+  const failCnt    = sheetData.length - successCnt;
+
+  renderResult(resultRows, successCnt, failCnt, apiFields);
+  document.getElementById('runBtn').disabled = false;
+  checkRunReady();
+}
+
+function sortFields(keys) {
+  const priority = FIELD_ORDER.filter(k => keys.includes(k));
+  const rest     = keys.filter(k => !FIELD_ORDER.includes(k));
+  return [...priority, ...rest];
+}
+
+/* ════════════════════════════════════
+   결과 렌더링
+   ════════════════════════════════════ */
+function renderResult(rows, successCnt, failCnt, apiFields) {
+  const section = document.getElementById('resultSection');
+  section.style.display = 'block';
+  document.getElementById('resultTitle').textContent = `조회 완료 — 총 ${rows.length.toLocaleString()}건`;
+
+  document.getElementById('statsWrap').innerHTML =
+    `<span class="stat-pill pill-total">전체 ${rows.length}</span>` +
+    `<span class="stat-pill pill-success">성공 ${successCnt}</span>` +
+    (failCnt > 0 ? `<span class="stat-pill pill-error">실패/건너뜀 ${failCnt}</span>` : '');
+
+  if (!rows.length) return;
+
+  /* 컬럼: 원본열 → API필드(중복 제외) → 조회상태 */
+  const origCols  = headers;
+  const extraCols = apiFields.filter(k => !headers.includes(k));
+  const allCols   = [...origCols, ...extraCols, '_status'];
+
+  document.getElementById('resultHead').innerHTML =
+    '<tr>' + allCols.map(k => `<th>${esc(FIELD_KO[k] || k)}</th>`).join('') + '</tr>';
+
+  document.getElementById('resultBody').innerHTML = rows.slice(0, MAX_PREVIEW).map(row => {
+    return '<tr>' + allCols.map(k => {
+      const val = row[k] ?? '';
+      if (k === '_status') {
+        const ok  = val === '성공';
+        const bg  = ok ? 'var(--color-success-bg)'  : 'var(--color-error-bg)';
+        const clr = ok ? 'var(--color-success-text)' : 'var(--color-error-text)';
+        return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;
+      }
+      return `<td title="${esc(String(val))}">${esc(String(val))}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+
+  document.getElementById('maxRowsNote').textContent = rows.length > MAX_PREVIEW
+    ? `* 화면에는 ${MAX_PREVIEW}행까지 표시됩니다. 전체 데이터는 다운로드 파일에 포함됩니다.`
+    : '';
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ════════════════════════════════════
+   다운로드
+   ════════════════════════════════════ */
+function downloadResult() {
+  if (!resultRows.length) return;
+  const ws = XLSX.utils.json_to_sheet(resultRows.map(r => {
+    const out = {};
+    Object.entries(r).forEach(([k, v]) => { out[FIELD_KO[k] || k] = v; });
+    return out;
+  }));
+  const wb  = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '사업자정보');
+  const now = new Date();
+  const ts  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `비즈노_사업자정보_${ts}.xlsx`);
+}
+</script>
+</body>
+</html>

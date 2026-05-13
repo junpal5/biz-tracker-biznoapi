@@ -414,6 +414,43 @@
     </div>
   </div>
 
+  <!-- API 단건 테스트 (디버깅용) -->
+  <div class="card" id="testSection">
+    <div class="card-header">
+      <div class="step-badge" style="background:var(--color-brand-blue);">T</div>
+      <h2>API 단건 테스트 <span style="font-size:0.75rem; font-weight:400; color:var(--color-steel);">— 실제 응답 구조 확인용</span></h2>
+    </div>
+    <div class="card-body">
+      <div style="display:grid; grid-template-columns:1fr auto auto; gap:var(--space-sm); align-items:flex-end;">
+        <div>
+          <label for="testQuery">조회어 (사업자등록번호 또는 상호명)</label>
+          <div class="input-wrap">
+            <input type="text" id="testQuery" placeholder="예: 1248100998  또는  삼성전자" style="font-family:var(--font);" />
+          </div>
+        </div>
+        <div>
+          <label for="testGb">gb 파라미터</label>
+          <select id="testGb" style="width:auto; padding:10px var(--space-md);">
+            <option value="1">gb=1</option>
+            <option value="2">gb=2</option>
+          </select>
+        </div>
+        <div style="padding-bottom:1px;">
+          <button onclick="runTestApi()" style="padding:10px var(--space-lg); background:var(--color-brand-blue); color:#fff; border:none; border-radius:var(--rounded-full); font-size:0.875rem; font-weight:600; font-family:var(--font); cursor:pointer; white-space:nowrap;">테스트 조회</button>
+        </div>
+      </div>
+      <p class="hint">API 키는 Step 1의 입력값을 사용합니다. 결과는 아래와 브라우저 콘솔(F12)에 표시됩니다.</p>
+      <div id="testResultWrap" style="display:none; margin-top:var(--space-md);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-xs);">
+          <span style="font-size:0.75rem; font-weight:600; color:var(--color-steel);">RAW API 응답</span>
+          <span id="testResultMeta" style="font-size:0.75rem; color:var(--color-stone);"></span>
+        </div>
+        <pre id="testResult" style="background:var(--color-primary); color:#a8ff78; font-size:0.75rem; padding:var(--space-md); border-radius:var(--rounded-md); overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
+      </div>
+      <div class="alert alert-error" id="testAlert"></div>
+    </div>
+  </div>
+
   <!-- 결과 -->
   <div class="card result-section" id="resultSection">
     <div class="card-header">
@@ -702,9 +739,26 @@ async function searchByName(name) {
 }
 
 async function getDetail(bizno) {
-  const data  = await callBizno(bizno, 1);
+  const data = await callBizno(bizno, 1);
+  console.group(`[BiznoAPI] gb=1 · ${bizno}`);
+  console.log('raw response:', data);
+  console.groupEnd();
+
   const items = Array.isArray(data.items) ? data.items : [];
-  return items[0] || null;
+  if (items.length === 0) {
+    /* items 비어있음 → raw 응답을 에러 메시지에 포함하여 디버깅 가능하게 */
+    const snippet = JSON.stringify(data).slice(0, 300);
+    throw new Error(`API items 없음 — 응답: ${snippet}`);
+  }
+  return items[0];
+}
+
+async function searchByNameRaw(name, gb) {
+  const data = await callBizno(name, gb);
+  console.group(`[BiznoAPI] gb=${gb} · ${name}`);
+  console.log('raw response:', data);
+  console.groupEnd();
+  return data;
 }
 
 /* ════════════════════════════════════
@@ -911,10 +965,16 @@ async function runQuery() {
     const entry  = detailMap[idx];
     const reason = failMap[idx];
     const base   = { ...row };
-    if (entry && entry.detail) return { ...base, ...entry.detail, _status: '성공' };
-    if (entry && entry.error)  return { ...base, _status: `실패: ${entry.error}` };
-    if (reason)                return { ...base, _status: reason };
-    return { ...base, _status: '알 수 없음' };
+    if (entry) {
+      /* getDetail 성공 (detail 객체 존재) */
+      if (entry.detail) return { ...base, ...entry.detail, _status: '성공' };
+      /* getDetail throw → 에러 메시지 (items 없음 등) */
+      return { ...base, _status: `실패: ${entry.error || 'API 오류'}` };
+    }
+    /* skipRows / nameFailed */
+    if (reason) return { ...base, _status: reason };
+    /* 여기에 도달하면 행이 처리 목록에서 누락된 것 (버그 표시) */
+    return { ...base, _status: '처리 누락 (행 인덱스 불일치)' };
   });
 
   setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 800);
@@ -974,6 +1034,39 @@ function renderResult(rows, successCnt, failCnt, apiFields) {
     : '';
 
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ════════════════════════════════════
+   단건 테스트
+   ════════════════════════════════════ */
+async function runTestApi() {
+  const query = document.getElementById('testQuery').value.trim();
+  const gb    = document.getElementById('testGb').value;
+  const testAlert  = document.getElementById('testAlert');
+  const resultWrap = document.getElementById('testResultWrap');
+  const resultEl   = document.getElementById('testResult');
+  const metaEl     = document.getElementById('testResultMeta');
+  hideAlert(testAlert);
+  resultWrap.style.display = 'none';
+
+  if (!query)              { showAlert(testAlert, '⚠️ 조회어를 입력하세요.'); return; }
+  if (!document.getElementById('apiKey').value.trim()) { showAlert(testAlert, '⚠️ API 키를 입력하세요.'); return; }
+
+  metaEl.textContent  = '조회 중...';
+  resultWrap.style.display = 'block';
+  resultEl.textContent = '';
+
+  const t0 = Date.now();
+  try {
+    const data = await searchByNameRaw(query, gb);
+    const ms   = Date.now() - t0;
+    const itemCount = Array.isArray(data.items) ? data.items.length : '?';
+    metaEl.textContent = `응답시간 ${ms}ms  ·  items: ${itemCount}건`;
+    resultEl.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    resultWrap.style.display = 'none';
+    showAlert(testAlert, `⛔ ${e.message}`);
+  }
 }
 
 /* ════════════════════════════════════

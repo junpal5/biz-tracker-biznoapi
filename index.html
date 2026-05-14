@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>비즈노라 사업자정보 조회</title>
+  <title>비즈노 기반 사업자정보 조회</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -271,7 +271,7 @@
 <div id="loginScreen">
   <div class="login-card">
     <div style="font-size:2rem; margin-bottom:var(--space-md);">🔍</div>
-    <h2>비즈노라 사업자정보 조회</h2>
+    <h2>비즈노 기반 사업자정보 조회</h2>
     <p>접속하려면 비밀번호를 입력하세요</p>
     <div class="input-wrap">
       <input type="password" id="loginPwd" placeholder="비밀번호" autocomplete="current-password" />
@@ -300,9 +300,10 @@
 </div>
 
 <!-- ── Header ── -->
-<div class="header">
-  <h1>비즈노라 사업자정보 조회</h1>
+<div class="header" style="position:relative;">
+  <h1>비즈노 기반 사업자정보 조회</h1>
   <p>bizno.net API 기반 사업자 상세정보 일괄 조회 서비스</p>
+  <span style="position:absolute; bottom:var(--space-md); right:var(--space-xl); font-size:0.6875rem; color:rgba(255,255,255,0.38); font-weight:500; letter-spacing:0.02em;">Contributor : LJH</span>
 </div>
 
 <div class="container">
@@ -597,14 +598,9 @@ function normalizeBizno(val) {
 /* ════════════════════════════════════
    로그인
    ════════════════════════════════════ */
-const LOGIN_KEY = 'bizno_auth_v1';
 const LOGIN_PWD = 'gallup1974';
 
 (function initLogin() {
-  if (localStorage.getItem(LOGIN_KEY) === '1') {
-    document.getElementById('loginScreen').style.display = 'none';
-    return;
-  }
   document.getElementById('loginPwd').addEventListener('keydown', e => {
     if (e.key === 'Enter') submitLogin();
   });
@@ -613,7 +609,6 @@ const LOGIN_PWD = 'gallup1974';
 function submitLogin() {
   const pwd = document.getElementById('loginPwd').value;
   if (pwd === LOGIN_PWD) {
-    localStorage.setItem(LOGIN_KEY, '1');
     document.getElementById('loginScreen').style.display = 'none';
   } else {
     document.getElementById('loginError').style.display = 'block';

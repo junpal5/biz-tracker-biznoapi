@@ -631,7 +631,7 @@ function checkPaidLimit() {
   const el = document.getElementById('paidLimitAlert');
   if (!el) return;
   if (usePaidApi && sheetData.length > PAID_DAILY_LIMIT) {
-    showAlert(el, `⚠️ 유료 API 일일 조회 한도(${PAID_DAILY_LIMIT.toLocaleString()}건)를 초과했습니다. 현재 파일은 ${sheetData.length.toLocaleString()}건입니다. 파일을 분할하거나 무료 API로 전환하세요.`);
+    showAlert(el, `⚠️ 유료 API 일일 조회 한도(${PAID_DAILY_LIMIT.toLocaleString()}건)를 초과했습니다. 현재 파일은 ${sheetData.length.toLocaleString()}건입니다. 파일을 분할하여 처리하세요.`);
   } else {
     hideAlert(el);
   }

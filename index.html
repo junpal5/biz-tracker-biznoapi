@@ -285,7 +285,7 @@
 <!-- ── Version Chip ── -->
 <button class="ver-chip" onclick="openVerModal()">
   <span class="ver-chip-dot"></span>
-  v1.0.0
+  v1.2.0
 </button>
 
 <!-- ── Version Modal ── -->
@@ -314,11 +314,6 @@
       <h2>API 설정</h2>
     </div>
     <div class="card-body">
-      <label for="apiKey">비즈노라 API 키</label>
-      <div class="input-wrap">
-        <input type="password" id="apiKey" placeholder="API 키를 입력하세요" autocomplete="off" />
-        <button class="toggle-btn" onclick="toggleApiKey()">👁</button>
-      </div>
       <div class="api-toggle-row">
         <span class="api-toggle-label">API 유형:</span>
         <label class="switch" style="margin-bottom:0;">
@@ -328,6 +323,46 @@
         <span class="api-badge free" id="apiBadge">무료 API (fapi)</span>
         <span class="api-info-text">유료 전환 시 더 많은 필드 조회 가능</span>
       </div>
+    </div>
+  </div>
+
+  <!-- API 단건 테스트 -->
+  <div class="card" id="testSection">
+    <div class="card-header">
+      <div class="step-badge" style="background:var(--color-brand-blue);">T</div>
+      <h2>API 단건 테스트 <span style="font-size:0.75rem; font-weight:400; color:var(--color-steel);">— 실제 응답 구조 확인용</span></h2>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-warning" style="display:block; margin-top:0; margin-bottom:var(--space-md);">
+        ⚠️ <strong>주의:</strong> 일괄 조회 전에 반드시 단건 테스트로 API가 정상 작동하는지 먼저 확인하세요.
+      </div>
+      <div style="display:grid; grid-template-columns:1fr auto auto; gap:var(--space-sm); align-items:flex-end;">
+        <div>
+          <label for="testQuery">조회어 (사업자등록번호 또는 상호명)</label>
+          <div class="input-wrap">
+            <input type="text" id="testQuery" placeholder="예: 1248100998  또는  삼성전자" style="font-family:var(--font);" />
+          </div>
+        </div>
+        <div>
+          <label for="testGb">gb 파라미터</label>
+          <select id="testGb" style="width:auto; padding:10px var(--space-md);">
+            <option value="1">gb=1 (사업자등록번호)</option>
+            <option value="3">gb=3 (상호명)</option>
+          </select>
+        </div>
+        <div style="padding-bottom:1px;">
+          <button onclick="runTestApi()" style="padding:10px var(--space-lg); background:var(--color-brand-blue); color:#fff; border:none; border-radius:var(--rounded-full); font-size:0.875rem; font-weight:600; font-family:var(--font); cursor:pointer; white-space:nowrap;">테스트 조회</button>
+        </div>
+      </div>
+      <p class="hint">결과는 아래와 브라우저 콘솔(F12)에 표시됩니다.</p>
+      <div id="testResultWrap" style="display:none; margin-top:var(--space-md);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-xs);">
+          <span style="font-size:0.75rem; font-weight:600; color:var(--color-steel);">RAW API 응답</span>
+          <span id="testResultMeta" style="font-size:0.75rem; color:var(--color-stone);"></span>
+        </div>
+        <pre id="testResult" style="background:var(--color-primary); color:#a8ff78; font-size:0.75rem; padding:var(--space-md); border-radius:var(--rounded-md); overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
+      </div>
+      <div class="alert alert-error" id="testAlert"></div>
     </div>
   </div>
 
@@ -414,43 +449,6 @@
     </div>
   </div>
 
-  <!-- API 단건 테스트 (디버깅용) -->
-  <div class="card" id="testSection">
-    <div class="card-header">
-      <div class="step-badge" style="background:var(--color-brand-blue);">T</div>
-      <h2>API 단건 테스트 <span style="font-size:0.75rem; font-weight:400; color:var(--color-steel);">— 실제 응답 구조 확인용</span></h2>
-    </div>
-    <div class="card-body">
-      <div style="display:grid; grid-template-columns:1fr auto auto; gap:var(--space-sm); align-items:flex-end;">
-        <div>
-          <label for="testQuery">조회어 (사업자등록번호 또는 상호명)</label>
-          <div class="input-wrap">
-            <input type="text" id="testQuery" placeholder="예: 1248100998  또는  삼성전자" style="font-family:var(--font);" />
-          </div>
-        </div>
-        <div>
-          <label for="testGb">gb 파라미터</label>
-          <select id="testGb" style="width:auto; padding:10px var(--space-md);">
-            <option value="1">gb=1</option>
-            <option value="2">gb=2</option>
-          </select>
-        </div>
-        <div style="padding-bottom:1px;">
-          <button onclick="runTestApi()" style="padding:10px var(--space-lg); background:var(--color-brand-blue); color:#fff; border:none; border-radius:var(--rounded-full); font-size:0.875rem; font-weight:600; font-family:var(--font); cursor:pointer; white-space:nowrap;">테스트 조회</button>
-        </div>
-      </div>
-      <p class="hint">API 키는 Step 1의 입력값을 사용합니다. 결과는 아래와 브라우저 콘솔(F12)에 표시됩니다.</p>
-      <div id="testResultWrap" style="display:none; margin-top:var(--space-md);">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-xs);">
-          <span style="font-size:0.75rem; font-weight:600; color:var(--color-steel);">RAW API 응답</span>
-          <span id="testResultMeta" style="font-size:0.75rem; color:var(--color-stone);"></span>
-        </div>
-        <pre id="testResult" style="background:var(--color-primary); color:#a8ff78; font-size:0.75rem; padding:var(--space-md); border-radius:var(--rounded-md); overflow-x:auto; white-space:pre-wrap; word-break:break-all; max-height:400px; overflow-y:auto;"></pre>
-      </div>
-      <div class="alert alert-error" id="testAlert"></div>
-    </div>
-  </div>
-
   <!-- 결과 -->
   <div class="card result-section" id="resultSection">
     <div class="card-header">
@@ -481,6 +479,26 @@
    ════════════════════════════════════ */
 const VERSION_HISTORY = [
   {
+    version: '1.2.0',
+    date: '2026-05-14',
+    changes: [
+      'API 키 입력창 제거 — 키를 내부에 고정하여 별도 입력 불필요',
+      'API 단건 테스트 패널을 API 설정 바로 아래로 이동, 정상 작동 확인 안내 문구 추가',
+      'gb 파라미터 선택 UI를 gb=1(사업자등록번호) / gb=3(상호명)으로 명시',
+      '버전 관리 기능 추가 — 버전 히스토리 모달 (하단 버전 칩 클릭)',
+    ]
+  },
+  {
+    version: '1.1.0',
+    date: '2026-05-14',
+    changes: [
+      'API 파라미터명 수정: query → q (bizno.net 공식 스펙 준수)',
+      'gb 값 수정: 상호명 검색 gb=3, 사업자등록번호 조회 gb=1',
+      '응답 필드명 전면 교체: bno, company, ceo, BsttCd, bstt, TaxTypeCd, taxtype, cno, EndDt',
+      '다중 검색 결과 선택 UI(disambiguation)에서도 실제 필드명(bno, company, ceo) 사용',
+    ]
+  },
+  {
     version: '1.0.0',
     date: '2026-05-13',
     changes: [
@@ -492,7 +510,7 @@ const VERSION_HISTORY = [
       'API 응답 필드 동적 테이블 표시 — 무료/유료 차이 자동 반영',
       '결과 XLSX 다운로드 (한국어 컬럼명 자동 변환)',
     ]
-  }
+  },
 ];
 
 function renderVerModal() {
@@ -521,8 +539,9 @@ let resultRows      = [];
 let disambigResolve = null;
 const MAX_PREVIEW   = 30;
 
-const BIZNO_FREE = 'https://bizno.net/api/fapi';
-const BIZNO_PAID = 'https://bizno.net/api/papi';
+const BIZNO_FREE    = 'https://bizno.net/api/fapi';
+const BIZNO_PAID    = 'https://bizno.net/api/papi';
+const BIZNO_API_KEY = 'HUznHcqSGyeU20qZK1dn2v8nH3iN';
 let usePaidApi = false;
 
 /* ── 필드 한국어 레이블 ── */
@@ -610,10 +629,6 @@ function toggleLoginPwd() {
 /* ════════════════════════════════════
    API 설정
    ════════════════════════════════════ */
-function toggleApiKey() {
-  const el = document.getElementById('apiKey');
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
 function onApiTypeChange() {
   usePaidApi = document.getElementById('paidApiToggle').checked;
   const badge = document.getElementById('apiBadge');
@@ -720,8 +735,7 @@ function checkRunReady() {
    API 호출
    ════════════════════════════════════ */
 async function callBizno(query, gb) {
-  const key  = document.getElementById('apiKey').value.trim();
-  if (!key) throw new Error('API 키가 입력되지 않았습니다.');
+  const key  = BIZNO_API_KEY;
   const base = usePaidApi ? BIZNO_PAID : BIZNO_FREE;
   const url  = `${base}?key=${encodeURIComponent(key)}&gb=${gb}&q=${encodeURIComponent(query)}&type=json`;
   const resp = await fetch(url);
@@ -858,11 +872,6 @@ async function runQuery() {
 
   const biznoCol = biznoColSel.value;
   const nameCol  = nameColSel.value;
-
-  if (!document.getElementById('apiKey').value.trim()) {
-    showAlert(runAlert, '⚠️ API 키를 입력해 주세요.');
-    return;
-  }
 
   document.getElementById('runBtn').disabled = true;
   document.getElementById('progressWrap').style.display = 'block';
@@ -1063,8 +1072,7 @@ async function runTestApi() {
   hideAlert(testAlert);
   resultWrap.style.display = 'none';
 
-  if (!query)              { showAlert(testAlert, '⚠️ 조회어를 입력하세요.'); return; }
-  if (!document.getElementById('apiKey').value.trim()) { showAlert(testAlert, '⚠️ API 키를 입력하세요.'); return; }
+  if (!query) { showAlert(testAlert, '⚠️ 조회어를 입력하세요.'); return; }
 
   metaEl.textContent  = '조회 중...';
   resultWrap.style.display = 'block';

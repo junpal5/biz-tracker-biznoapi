@@ -407,6 +407,7 @@
       </div>
 
       <div class="alert alert-error" id="fileAlert"></div>
+      <div class="alert alert-warning" id="paidLimitAlert"></div>
     </div>
   </div>
 
@@ -624,8 +625,21 @@ function toggleLoginPwd() {
 /* ════════════════════════════════════
    API 설정
    ════════════════════════════════════ */
+const PAID_DAILY_LIMIT = 20000;
+
+function checkPaidLimit() {
+  const el = document.getElementById('paidLimitAlert');
+  if (!el) return;
+  if (usePaidApi && sheetData.length > PAID_DAILY_LIMIT) {
+    showAlert(el, `⚠️ 유료 API 일일 조회 한도(${PAID_DAILY_LIMIT.toLocaleString()}건)를 초과했습니다. 현재 파일은 ${sheetData.length.toLocaleString()}건입니다. 파일을 분할하거나 무료 API로 전환하세요.`);
+  } else {
+    hideAlert(el);
+  }
+}
+
 function onApiTypeChange() {
   usePaidApi = document.getElementById('paidApiToggle').checked;
+  checkPaidLimit();
   const badge = document.getElementById('apiBadge');
   if (usePaidApi) { badge.textContent = '유료 API (papi)'; badge.className = 'api-badge paid'; }
   else            { badge.textContent = '무료 API (fapi)'; badge.className = 'api-badge free'; }
@@ -701,6 +715,7 @@ function handleFile(file) {
       colSelectWrap.style.display = 'block';
       fileNameText.textContent    = `📄 ${file.name}  (${sheetData.length.toLocaleString()} 행)`;
       fileNameEl.style.display    = 'flex';
+      checkPaidLimit();
       checkRunReady();
     } catch (err) {
       showAlert(fileAlert, '⚠️ 파일 파싱 오류: ' + err.message);
@@ -711,6 +726,7 @@ function handleFile(file) {
 
 function clearFile() {
   sheetData = []; headers = [];
+  hideAlert(document.getElementById('paidLimitAlert'));
   fileInput.value = '';
   fileNameEl.style.display    = 'none';
   fileNameText.textContent    = '';

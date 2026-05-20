@@ -280,7 +280,7 @@
 <!-- ── Version Chip ── -->
 <button class="ver-chip" onclick="openVerModal()">
   <span class="ver-chip-dot"></span>
-  v1.2.0
+  v1.3.0
 </button>
 
 <!-- ── Version Modal ── -->
@@ -473,6 +473,16 @@
    ════════════════════════════════════ */
 const VERSION_HISTORY = [
   {
+    version: '1.3.0',
+    date: '2026-05-20',
+    changes: [
+      'FIELD_KO 전면 확장 — 유료 API(papi) 전용 필드(companyen, phone, fax, btype, bsector, hscd, kscd, scale, emp, homepage, saleno, lng, bizyear, saleamt, bzoppft, crtmnpf, cptlamt, tastamt, tdbtamt, tcptamt, udate, regdate 등) 한국어 컬럼명 추가',
+      'Excel 내보내기를 aoa_to_sheet 방식으로 전환 — FIELD_ORDER 기반 컬럼 순서 완전 고정',
+      'Excel 각 컬럼 제목 셀에 한국어 헤더 일괄 적용 (미정의 필드 포함)',
+      'Excel 열 너비 필드별 자동 조정 추가',
+    ]
+  },
+  {
     version: '1.2.0',
     date: '2026-05-14',
     changes: [
@@ -540,39 +550,96 @@ let usePaidApi = false;
 
 /* ── 필드 한국어 레이블 ── */
 const FIELD_KO = {
+  /* 기본 식별 정보 */
   bno:        '사업자등록번호',
   company:    '상호명',
+  companyen:  '상호명(영문)',
   ceo:        '대표자',
-  adres:      '주소(지번)',
-  rdnmadr:    '도로명주소',
-  telno:      '전화번호',
-  faxno:      '팩스번호',
-  zip_cd:     '우편번호',
-  bzdo:       '업종',
-  bizcnd:     '업태',
   cno:        '법인등록번호',
-  enpEstblDt: '설립일',
+  /* 사업자 상태 */
   BsttCd:     '사업자상태코드',
   bstt:       '사업자상태',
   TaxTypeCd:  '과세유형코드',
   taxtype:    '과세유형',
-  EndDt:      '폐업일',
+  /* 날짜 */
+  fdate:      '설립일',
+  enpEstblDt: '설립일',
   openDt:     '개업일',
-  lat:        '위도',
-  lon:        '경도',
+  EndDt:      '폐업일',
+  /* 주소 — papi 필드명 */
+  zipcd:      '우편번호',
+  addr_o:     '주소(지번)',
+  addr_n:     '도로명주소',
+  /* 주소 — fapi 필드명 */
+  zip_cd:     '우편번호',
+  adres:      '주소(지번)',
+  rdnmadr:    '도로명주소',
+  /* 연락처 — papi 필드명 */
+  phone:      '전화번호',
+  fax:        '팩스번호',
+  /* 연락처 — fapi 필드명 */
+  telno:      '전화번호',
+  faxno:      '팩스번호',
+  /* 업종·업태 — papi 필드명 */
+  btype:      '업태',
+  bsector:    '종목',
+  hscd:       '국세청 업종코드',
+  kscd:       '표준산업분류 업종코드',
+  /* 업종·업태 — fapi 필드명 */
+  bzdo:       '업종',
+  bizcnd:     '업태',
+  /* 기업 정보 */
+  scale:      '기업규모',
+  emp:        '직원수',
+  /* 웹·통신판매 — papi 필드명 */
+  homepage:   '홈페이지',
+  saleno:     '통신판매업번호',
+  /* 웹·통신판매 — fapi 필드명 */
   hmgPg:      '홈페이지',
   tno_1st:    '통신판매업신고번호',
+  /* 위치 */
+  lat:        '위도',
+  lng:        '경도',
+  lon:        '경도',
+  /* 재무 정보 */
+  bizyear:    '재무기준년도',
+  saleamt:    '매출액',
+  bzoppft:    '영업이익',
+  crtmnpf:    '당기순이익',
+  cptlamt:    '자본금',
+  tastamt:    '총자산',
+  tdbtamt:    '총부채',
+  tcptamt:    '총자본',
+  /* 메타 */
+  udate:      '갱신일',
+  regdate:    '최초등록일',
   _status:    '조회상태',
 };
 
 /* 우선 표시 순서 */
 const FIELD_ORDER = [
-  'bno','company','ceo','bstt','BsttCd',
-  'taxtype','TaxTypeCd','cno','enpEstblDt','openDt','EndDt',
-  'zip_cd','adres','rdnmadr',
-  'telno','faxno','hmgPg',
-  'bzdo','bizcnd',
-  'tno_1st','lat','lon',
+  /* 기본 식별 */
+  'bno', 'company', 'companyen', 'ceo', 'cno',
+  /* 상태 */
+  'bstt', 'BsttCd', 'taxtype', 'TaxTypeCd',
+  /* 날짜 */
+  'fdate', 'enpEstblDt', 'openDt', 'EndDt',
+  /* 주소 */
+  'zipcd', 'zip_cd', 'addr_o', 'adres', 'addr_n', 'rdnmadr',
+  /* 연락처 */
+  'phone', 'telno', 'fax', 'faxno',
+  /* 업종·업태 */
+  'btype', 'bizcnd', 'bzdo', 'bsector', 'hscd', 'kscd',
+  /* 기업 정보 */
+  'scale', 'emp',
+  /* 웹·통신판매 */
+  'homepage', 'hmgPg', 'saleno', 'tno_1st',
+  /* 위치 */
+  'lat', 'lng', 'lon',
+  /* 재무 */
+  'bizyear', 'saleamt', 'bzoppft', 'crtmnpf', 'cptlamt', 'tastamt', 'tdbtamt', 'tcptamt',
+  /* 메타 */
+  'udate', 'regdate',
 ];
 
 /* ════════════════════════════════════
@@ -1099,12 +1166,44 @@ async function runTestApi() {
    ════════════════════════════════════ */
 function downloadResult() {
   if (!resultRows.length) return;
-  const ws = XLSX.utils.json_to_sheet(resultRows.map(r => {
-    const out = {};
-    Object.entries(r).forEach(([k, v]) => { out[FIELD_KO[k] || k] = v; });
-    return out;
-  }));
-  const wb  = XLSX.utils.book_new();
+
+  /* 1. 결과 행에 있는 모든 필드 수집 후 우선순서 정렬, _status 맨 끝 */
+  const fieldSet = new Set();
+  resultRows.forEach(r => Object.keys(r).forEach(k => fieldSet.add(k)));
+  const orderedFields = [
+    ...sortFields([...fieldSet].filter(k => k !== '_status')),
+    '_status',
+  ];
+
+  /* 2. 제목 행 — 한국어 컬럼명, 미정의 필드는 API 필드명 그대로 */
+  const headerRow = orderedFields.map(k => FIELD_KO[k] || k);
+
+  /* 3. 데이터 행 */
+  const dataRows = resultRows.map(r =>
+    orderedFields.map(k => { const v = r[k]; return v === undefined || v === null ? '' : v; })
+  );
+
+  /* 4. 배열 기반 시트 생성 (컬럼 순서 완전 제어) */
+  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+
+  /* 5. 열 너비 자동 설정 */
+  const colWidths = {
+    bno: 14, company: 24, companyen: 30, ceo: 10,
+    cno: 18, BsttCd: 8, bstt: 10, TaxTypeCd: 8, taxtype: 22,
+    fdate: 12, enpEstblDt: 12, openDt: 12, EndDt: 12,
+    zipcd: 8, zip_cd: 8, addr_o: 32, adres: 32, addr_n: 32, rdnmadr: 32,
+    phone: 14, telno: 14, fax: 14, faxno: 14,
+    btype: 20, bizcnd: 20, bzdo: 20, bsector: 20, hscd: 12, kscd: 12,
+    scale: 10, emp: 8,
+    homepage: 30, hmgPg: 30, saleno: 22, tno_1st: 22,
+    lat: 18, lng: 18, lon: 18,
+    bizyear: 10, saleamt: 16, bzoppft: 16, crtmnpf: 16,
+    cptlamt: 16, tastamt: 16, tdbtamt: 16, tcptamt: 16,
+    udate: 12, regdate: 12, _status: 14,
+  };
+  ws['!cols'] = orderedFields.map(k => ({ wch: colWidths[k] || 15 }));
+
+  const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '사업자정보');
   const now = new Date();
   const ts  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;

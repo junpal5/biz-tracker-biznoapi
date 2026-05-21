@@ -258,9 +258,142 @@
       .ver-modal    { width: calc(100vw - 28px); }
       .ver-modal-overlay { padding: 0 0 60px 14px; }
     }
+
+    /* ── Home Screen ── */
+    #homeScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--color-canvas);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: var(--space-xxl);
+    }
+    .home-logo { font-size: 2.5rem; margin-bottom: calc(-1 * var(--space-md)); }
+    .home-title { text-align: center; }
+    .home-title h1 { font-size: 1.5rem; font-weight: 600; color: var(--color-ink); }
+    .home-title p  { font-size: 0.875rem; color: var(--color-steel); margin-top: 6px; }
+    .home-nav-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);
+      width: 100%; max-width: 520px; padding: 0 var(--space-md);
+    }
+    .home-nav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+      padding: var(--space-xl) var(--space-lg);
+      background: var(--color-canvas); border: 2px solid var(--color-hairline);
+      border-radius: var(--rounded-xl); cursor: pointer; font-family: var(--font);
+      transition: border-color .15s, box-shadow .15s, transform .1s;
+    }
+    .home-nav-btn:hover { border-color: var(--color-primary); box-shadow: rgba(0,0,0,0.08) 0px 8px 24px; transform: translateY(-2px); }
+    .home-nav-btn:active { transform: translateY(0); }
+    .home-nav-icon  { font-size: 2rem; }
+    .home-nav-label { font-size: 0.9375rem; font-weight: 700; color: var(--color-ink); }
+    .home-nav-desc  { font-size: 0.75rem; color: var(--color-steel); text-align: center; line-height: 1.4; }
+
+    /* ── Back button ── */
+    .page-back-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px var(--space-sm); background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25); border-radius: var(--rounded-full);
+      font-size: 0.8125rem; font-weight: 500; color: rgba(255,255,255,0.8);
+      font-family: var(--font); cursor: pointer;
+      position: absolute; left: var(--space-xl); top: 50%; transform: translateY(-50%);
+      transition: background .15s, color .15s;
+    }
+    .page-back-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+    /* ── Web Lookup Page ── */
+    .wl-proxy-bar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: var(--space-sm); padding: var(--space-sm) var(--space-md);
+      background: var(--color-surface); border: 1px solid var(--color-hairline);
+      border-radius: var(--rounded-md); font-size: 0.8125rem;
+    }
+    .wl-proxy-label { color: var(--color-charcoal); font-weight: 500; }
+    .wl-proxy-status { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.ok    { background: #16a34a; }
+    .status-dot.err   { background: #dc2626; }
+    .status-dot.check { background: var(--color-stone); }
+    .btn-recheck { padding: 5px var(--space-sm); background: transparent; border: 1px solid var(--color-hairline); border-radius: var(--rounded-full); font-size: 0.75rem; font-weight: 600; color: var(--color-charcoal); font-family: var(--font); cursor: pointer; transition: border-color .15s; }
+    .btn-recheck:hover { border-color: var(--color-charcoal); }
+
+    .wl-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-xs); }
+    .wl-mode-card {
+      display: flex; flex-direction: column; gap: 3px;
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--color-hairline); border-radius: var(--rounded-md);
+      cursor: pointer; transition: border-color .15s; position: relative;
+    }
+    .wl-mode-card:has(input:checked) { border-color: var(--color-brand-blue); background: rgba(37,99,235,.04); }
+    .wl-mode-card input[type=radio] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .wl-mode-title { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
+    .wl-mode-desc  { font-size: 0.75rem; color: var(--color-steel); line-height: 1.4; }
+
+    .wl-col-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-md); }
+    .wl-col-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-md); }
+
+    /* candidates review modal */
+    .wl-review-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+      padding: var(--space-xl);
+    }
+    .wl-review-overlay.open { display: flex; }
+    .wl-review-modal {
+      background: var(--color-canvas); border-radius: var(--rounded-xl);
+      border: 1px solid var(--color-hairline); box-shadow: rgba(0,0,0,0.15) 0px 20px 40px;
+      width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto;
+    }
+    .wl-review-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--color-hairline);
+      position: sticky; top: 0; background: var(--color-canvas); z-index: 1;
+    }
+    .wl-review-body { padding: var(--space-md) var(--space-lg) var(--space-lg); }
+    .wl-cand-item {
+      border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg);
+      overflow: hidden; margin-bottom: var(--space-sm);
+    }
+    .wl-cand-item:last-child { margin-bottom: 0; }
+    .wl-cand-option { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; transition: background .15s; }
+    .wl-cand-option:hover { background: var(--color-surface-soft); }
+    .wl-cand-option input[type=radio] { flex-shrink: 0; margin-top: 3px; accent-color: var(--color-brand-blue); }
+    .wl-cand-name   { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
+    .wl-cand-detail { font-size: 0.75rem; color: var(--color-steel); margin-top: 2px; line-height: 1.5; }
+    .wl-score-badge { display: inline-block; padding: 2px 6px; border-radius: var(--rounded-full); font-size: 0.6875rem; font-weight: 700; }
+    .wl-score-high { background: var(--color-success-bg); color: var(--color-success-text); }
+    .wl-score-mid  { background: var(--color-warn-bg); color: var(--color-warn-text); }
+    .wl-skip-opt { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; background: var(--color-surface-soft); }
+    .wl-skip-opt span { font-size: 0.8125rem; color: var(--color-stone); }
+
+    @media (max-width: 600px) {
+      .home-nav-grid { grid-template-columns: 1fr; max-width: 320px; }
+      .wl-col-grid-3, .wl-col-grid-4 { grid-template-columns: 1fr 1fr; }
+      .wl-mode-grid { grid-template-columns: 1fr; }
+      .page-back-btn { position: static; transform: none; margin-bottom: var(--space-xs); }
+    }
   </style>
 </head>
 <body>
+
+<!-- ── Home Screen ── -->
+<div id="homeScreen" style="display:none; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-xxl);">
+  <div class="home-logo">🔍</div>
+  <div class="home-title">
+    <h1>비즈노 기반 사업자정보 조회</h1>
+    <p>조회 방식을 선택하세요</p>
+  </div>
+  <div class="home-nav-grid">
+    <button class="home-nav-btn" onclick="goApiPage()">
+      <span class="home-nav-icon">⚡</span>
+      <span class="home-nav-label">API 조회</span>
+      <span class="home-nav-desc">bizno.net API 기반<br>대량 사업자 상세정보 조회</span>
+    </button>
+    <button class="home-nav-btn" onclick="goWebLookupPage()">
+      <span class="home-nav-icon">🔎</span>
+      <span class="home-nav-label">사업자등록번호 조회</span>
+      <span class="home-nav-desc">비즈노 웹 크롤링 기반<br>회사명으로 사업자번호 자동 매핑</span>
+    </button>
+  </div>
+</div>
 
 <!-- ── Login Screen ── -->
 <div id="loginScreen">
@@ -280,7 +413,7 @@
 <!-- ── Version Chip ── -->
 <button class="ver-chip" onclick="openVerModal()">
   <span class="ver-chip-dot"></span>
-  v1.3.0
+  v1.4.0
 </button>
 
 <!-- ── Version Modal ── -->
@@ -294,8 +427,12 @@
   </div>
 </div>
 
+<!-- ══ API Page ══ -->
+<div id="apiPage" style="display:none;">
+
 <!-- ── Header ── -->
 <div class="header" style="position:relative;">
+  <button class="page-back-btn" onclick="goHome()">← 홈</button>
   <h1>비즈노 기반 사업자정보 조회</h1>
   <p>bizno.net API 기반 사업자 상세정보 일괄 조회 서비스</p>
   <span style="position:absolute; bottom:var(--space-md); right:var(--space-xl); font-size:0.6875rem; color:rgba(255,255,255,0.38); font-weight:500; letter-spacing:0.02em;">Contributor : LJH</span>
@@ -466,12 +603,203 @@
   </div>
 
 </div>
+</div><!-- /#apiPage -->
+
+<!-- ══ Web Lookup Page ══ -->
+<div id="webLookupPage" style="display:none;">
+
+<div class="header" style="position:relative;">
+  <button class="page-back-btn" onclick="goHome()">← 홈</button>
+  <h1>사업자등록번호 조회</h1>
+  <p>비즈노 웹 크롤링 기반 사업자번호 자동 매핑</p>
+  <span style="position:absolute; bottom:var(--space-md); right:var(--space-xl); font-size:0.6875rem; color:rgba(255,255,255,0.38); font-weight:500; letter-spacing:0.02em;">Contributor : LJH</span>
+</div>
+
+<div class="container">
+
+  <!-- Step 1: 서버 연결 & 모드 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">1</div>
+      <h2>서버 연결 확인 &amp; 조회 모드</h2>
+    </div>
+    <div class="card-body">
+      <div class="wl-proxy-bar">
+        <span class="wl-proxy-label">로컬 서버 (localhost:5000)</span>
+        <span class="wl-proxy-status" id="wl-proxy-status">
+          <span class="status-dot check" id="wl-proxy-dot"></span>
+          <span id="wl-proxy-text">확인 중...</span>
+        </span>
+        <button class="btn-recheck" onclick="checkProxy()">재확인</button>
+      </div>
+      <div id="wl-proxy-guide" style="display:none; margin-top:var(--space-sm); padding:var(--space-sm) var(--space-md); background:var(--color-closed-bg); border:1px solid #FECACA; border-radius:var(--rounded-md); font-size:0.8125rem; color:#991B1B; line-height:1.6;">
+        ⛔ 로컬 서버가 응답하지 않습니다.<br>
+        <strong>서버 실행 방법:</strong><br>
+        1. <code>server.py</code>를 기존 .py 파일들과 같은 폴더에 넣으세요.<br>
+        2. PowerShell에서 <code>pip install flask flask-cors requests beautifulsoup4</code> 실행<br>
+        3. <code>python server.py</code> 실행 후 이 페이지에서 재확인하세요.
+      </div>
+      <div style="margin-top:var(--space-lg);">
+        <label>조회 모드</label>
+        <div class="wl-mode-grid">
+          <label class="wl-mode-card" id="wl-mode-v6-card">
+            <input type="radio" name="wl-mode" value="v6" checked onchange="onWlModeChange()" />
+            <span class="wl-mode-title">⚙️ v6 모드</span>
+            <span class="wl-mode-desc">회사명 + 기업 규모 + 업종으로 후보 채점</span>
+          </label>
+          <label class="wl-mode-card" id="wl-mode-pub-card">
+            <input type="radio" name="wl-mode" value="public" onchange="onWlModeChange()" />
+            <span class="wl-mode-title">📋 공공데이터 모드</span>
+            <span class="wl-mode-desc">회사명 + 대표자 + 전화 + 주소로 후보 채점</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 파일 업로드 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">2</div>
+      <h2>엑셀 파일 업로드 및 열 선택</h2>
+    </div>
+    <div class="card-body">
+      <div class="file-area" id="wl-fileArea">
+        <input type="file" id="wl-fileInput" accept=".xlsx,.xls" />
+        <div class="file-icon">📂</div>
+        <p>클릭하거나 파일을 드래그하여 업로드하세요<br><small>(.xlsx / .xls)</small></p>
+      </div>
+      <div class="file-name" id="wl-fileNameEl">
+        <span class="file-name-text" id="wl-fileNameText"></span>
+        <button class="file-remove-btn" onclick="wlClearFile()">✕</button>
+      </div>
+      <div id="wl-colSelectWrap" style="display:none; margin-top:var(--space-md);">
+        <!-- v6 columns -->
+        <div id="wl-v6-cols">
+          <div class="wl-col-grid-3">
+            <div>
+              <label for="wl-col-company">회사명 열 <span style="color:var(--color-brand-coral);">*</span></label>
+              <select id="wl-col-company" onchange="wlCheckRunReady()"><option value="">-- 선택 --</option></select>
+            </div>
+            <div>
+              <label for="wl-col-scale">기업 규모 열 <span style="color:var(--color-stone); font-weight:400;">(선택)</span></label>
+              <select id="wl-col-scale" onchange="wlCheckRunReady()"><option value="">-- 선택 안 함 --</option></select>
+            </div>
+            <div>
+              <label for="wl-col-industry">업종 열 <span style="color:var(--color-stone); font-weight:400;">(선택)</span></label>
+              <select id="wl-col-industry" onchange="wlCheckRunReady()"><option value="">-- 선택 안 함 --</option></select>
+            </div>
+          </div>
+          <p class="hint" style="margin-top:var(--space-sm);">업종 열이 있으면 100점 이상, 없으면 90점 이상인 후보를 결과에 포함합니다.</p>
+        </div>
+        <!-- public data columns -->
+        <div id="wl-pub-cols" style="display:none;">
+          <div class="wl-col-grid-4">
+            <div>
+              <label for="wl-col-company-pub">회사명 열 <span style="color:var(--color-brand-coral);">*</span></label>
+              <select id="wl-col-company-pub" onchange="wlCheckRunReady()"><option value="">-- 선택 --</option></select>
+            </div>
+            <div>
+              <label for="wl-col-rep">대표자명 열 <span style="color:var(--color-stone); font-weight:400;">(선택)</span></label>
+              <select id="wl-col-rep" onchange="wlCheckRunReady()"><option value="">-- 선택 안 함 --</option></select>
+            </div>
+            <div>
+              <label for="wl-col-phone">전화번호 열 <span style="color:var(--color-stone); font-weight:400;">(선택)</span></label>
+              <select id="wl-col-phone" onchange="wlCheckRunReady()"><option value="">-- 선택 안 함 --</option></select>
+            </div>
+            <div>
+              <label for="wl-col-address">도로명주소 열 <span style="color:var(--color-stone); font-weight:400;">(선택)</span></label>
+              <select id="wl-col-address" onchange="wlCheckRunReady()"><option value="">-- 선택 안 함 --</option></select>
+            </div>
+          </div>
+          <p class="hint" style="margin-top:var(--space-sm);">100점 이상인 후보를 결과에 포함합니다. 보조 정보가 있을수록 정확도가 높아집니다.</p>
+        </div>
+      </div>
+      <div class="alert alert-error" id="wl-fileAlert"></div>
+    </div>
+  </div>
+
+  <!-- Step 3: 실행 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">3</div>
+      <h2>조회 실행</h2>
+    </div>
+    <div class="card-body">
+      <button class="btn-run" id="wl-runBtn" disabled onclick="runWebLookup()">🔎 조회 시작</button>
+      <div class="progress-wrap" id="wl-progressWrap">
+        <div class="progress-label">
+          <span id="wl-progressText">처리 중...</span>
+          <span id="wl-progressPct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="wl-progressFill"></div>
+        </div>
+      </div>
+      <div class="alert alert-error" id="wl-runAlert"></div>
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="card result-section" id="wl-resultSection">
+    <div class="card-header">
+      <div class="step-badge done">✓</div>
+      <h2>조회 결과</h2>
+    </div>
+    <div class="card-body">
+      <div class="result-header">
+        <h3 id="wl-resultTitle">조회 완료</h3>
+        <button class="btn-download" onclick="wlDownloadResult()">⬇ 결과 다운로드 (XLSX)</button>
+      </div>
+      <div class="stats" id="wl-statsWrap"></div>
+      <div class="table-wrap">
+        <table>
+          <thead id="wl-resultHead"></thead>
+          <tbody id="wl-resultBody"></tbody>
+        </table>
+      </div>
+      <p class="max-rows-note" id="wl-maxRowsNote"></p>
+    </div>
+  </div>
+
+</div><!-- /.container (webLookupPage) -->
+</div><!-- /#webLookupPage -->
+
+<!-- 동점 검토 모달 -->
+<div class="wl-review-overlay" id="wl-reviewOverlay">
+  <div class="wl-review-modal">
+    <div class="wl-review-head">
+      <div>
+        <div style="font-size:0.9375rem; font-weight:600; color:var(--color-ink);">후보 검토 필요</div>
+        <div style="font-size:0.75rem; color:var(--color-stone); margin-top:2px;" id="wl-review-sub"></div>
+      </div>
+      <div style="display:flex; gap:var(--space-sm);">
+        <button class="btn-auto-select" onclick="wlAutoSelectFirst()">모두 첫 번째</button>
+        <button class="btn-confirm-disambig" onclick="wlConfirmReview()">선택 완료 ▶</button>
+      </div>
+    </div>
+    <div class="wl-review-body" id="wl-reviewList"></div>
+  </div>
+</div>
 
 <script>
 /* ════════════════════════════════════
    버전 관리
    ════════════════════════════════════ */
 const VERSION_HISTORY = [
+  {
+    version: '1.4.0',
+    date: '2026-05-21',
+    changes: [
+      '홈 화면 추가 — 로그인 후 "API 조회" / "사업자등록번호 조회" 두 페이지로 분기',
+      '"사업자등록번호 조회" 페이지 신규 추가 — 비즈노 웹 크롤링 기반 사업자번호 자동 매핑',
+      'v6 모드: 회사명 + 기업 규모 + 업종으로 후보 채점 (Python bizno_web_lookup_v6.py 로직 JS 포팅)',
+      '공공데이터 모드: 회사명 + 대표자 + 전화 + 주소로 후보 채점 (bizno_web_lookup_공공데이터_v1.py 로직 JS 포팅)',
+      '동점 후보 발생 시 검토 UI (review modal) 제공',
+      'server.py (Flask 로컬 프록시) 추가 — CORS 우회용, 같은 폴더에 두고 python server.py 로 실행',
+      '엑셀 열 자동 감지 확장 — 대표자, 전화, 주소, 업종, 규모 열도 자동 인식',
+    ]
+  },
   {
     version: '1.3.0',
     date: '2026-05-20',
@@ -670,6 +998,11 @@ function submitLogin() {
   const pwd = document.getElementById('loginPwd').value;
   if (pwd === LOGIN_PWD) {
     document.getElementById('loginScreen').style.display = 'none';
+    const hs = document.getElementById('homeScreen');
+    hs.style.display = 'flex';
+    hs.style.position = 'fixed';
+    hs.style.inset = '0';
+    hs.style.zIndex = '9999';
   } else {
     document.getElementById('loginError').style.display = 'block';
     document.getElementById('loginPwd').value = '';
@@ -679,6 +1012,29 @@ function submitLogin() {
 function toggleLoginPwd() {
   const el = document.getElementById('loginPwd');
   el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* ════════════════════════════════════
+   페이지 내비게이션
+   ════════════════════════════════════ */
+function goHome() {
+  document.getElementById('apiPage').style.display       = 'none';
+  document.getElementById('webLookupPage').style.display = 'none';
+  const hs = document.getElementById('homeScreen');
+  hs.style.display = 'flex';
+}
+
+function goApiPage() {
+  document.getElementById('homeScreen').style.display    = 'none';
+  document.getElementById('webLookupPage').style.display = 'none';
+  document.getElementById('apiPage').style.display       = 'block';
+}
+
+function goWebLookupPage() {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('apiPage').style.display    = 'none';
+  document.getElementById('webLookupPage').style.display = 'block';
+  checkProxy();
 }
 
 /* ════════════════════════════════════
@@ -1209,6 +1565,546 @@ function downloadResult() {
   const now = new Date();
   const ts  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
   XLSX.writeFile(wb, `비즈노_사업자정보_${ts}.xlsx`);
+}
+
+/* ════════════════════════════════════
+   웹 조회 — 공통 상태
+   ════════════════════════════════════ */
+const PROXY_URL    = 'http://localhost:5000';
+let wlSheetData    = [];
+let wlHeaders      = [];
+let wlResultRows   = [];
+let wlReviewResolve = null;
+
+/* ── 프록시 연결 확인 ── */
+async function checkProxy() {
+  const dot  = document.getElementById('wl-proxy-dot');
+  const txt  = document.getElementById('wl-proxy-text');
+  const guide = document.getElementById('wl-proxy-guide');
+  dot.className  = 'status-dot check';
+  txt.textContent = '확인 중...';
+  guide.style.display = 'none';
+  try {
+    const resp = await fetch(`${PROXY_URL}/health`, { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    if (data.ok) {
+      dot.className   = 'status-dot ok';
+      txt.textContent = '연결됨';
+    } else throw new Error('not ok');
+  } catch {
+    dot.className   = 'status-dot err';
+    txt.textContent = '연결 안 됨';
+    guide.style.display = 'block';
+  }
+}
+
+/* ── 조회 모드 전환 ── */
+function onWlModeChange() {
+  const mode = document.querySelector('input[name="wl-mode"]:checked').value;
+  document.getElementById('wl-v6-cols').style.display  = mode === 'v6'     ? 'block' : 'none';
+  document.getElementById('wl-pub-cols').style.display = mode === 'public' ? 'block' : 'none';
+  wlCheckRunReady();
+}
+
+/* ── 파일 처리 ── */
+const wlFileArea    = document.getElementById('wl-fileArea');
+const wlFileInput   = document.getElementById('wl-fileInput');
+const wlFileAlert   = document.getElementById('wl-fileAlert');
+const wlFileNameEl  = document.getElementById('wl-fileNameEl');
+const wlFileNameTxt = document.getElementById('wl-fileNameText');
+
+wlFileArea.addEventListener('dragover',  e => { e.preventDefault(); wlFileArea.classList.add('drag-over'); });
+wlFileArea.addEventListener('dragleave', () => wlFileArea.classList.remove('drag-over'));
+wlFileArea.addEventListener('drop', e => {
+  e.preventDefault(); wlFileArea.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) wlHandleFile(e.dataTransfer.files[0]);
+});
+wlFileInput.addEventListener('change', () => { if (wlFileInput.files[0]) wlHandleFile(wlFileInput.files[0]); });
+
+function wlHandleFile(file) {
+  hideAlert(wlFileAlert);
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls'].includes(ext)) { showAlert(wlFileAlert, '⚠️ .xlsx 또는 .xls 파일만 지원합니다.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb  = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+      const ws  = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      let hdrIdx = 0;
+      for (let i = 0; i < Math.min(raw.length, 20); i++) {
+        if ((raw[i] || []).filter(c => c !== null && c !== undefined && String(c).trim() !== '').length >= 2) { hdrIdx = i; break; }
+      }
+      wlHeaders  = (raw[hdrIdx] || []).map((h, idx) => { const s = h !== null && h !== undefined ? String(h).trim() : ''; return s === '' ? `열${idx + 1}` : s; });
+      wlSheetData = raw.slice(hdrIdx + 1)
+        .filter(row => row && row.some(c => c !== null && c !== undefined && String(c).trim() !== ''))
+        .map(row => { const obj = {}; wlHeaders.forEach((h, i) => { obj[h] = row[i] !== undefined ? row[i] : ''; }); return obj; });
+      if (wlSheetData.length === 0) { showAlert(wlFileAlert, '⚠️ 파일에 데이터가 없습니다.'); return; }
+      wlPopulateColSelects();
+      wlAutoDetectCols();
+      document.getElementById('wl-colSelectWrap').style.display = 'block';
+      wlFileNameTxt.textContent = `📄 ${file.name}  (${wlSheetData.length.toLocaleString()} 행)`;
+      wlFileNameEl.style.display = 'flex';
+      wlCheckRunReady();
+    } catch (err) { showAlert(wlFileAlert, '⚠️ 파일 파싱 오류: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function wlPopulateColSelects() {
+  const base = '<option value="">-- 선택 --</option>';
+  const none = '<option value="">-- 선택 안 함 --</option>';
+  const opts = wlHeaders.slice(0, 15).map((h, i) =>
+    `<option value="${esc(h)}">${String.fromCharCode(65 + i)}열: ${esc(h)}</option>`
+  ).join('');
+  ['wl-col-company', 'wl-col-company-pub'].forEach(id => {
+    document.getElementById(id).innerHTML = base + opts;
+  });
+  ['wl-col-scale', 'wl-col-industry', 'wl-col-rep', 'wl-col-phone', 'wl-col-address'].forEach(id => {
+    document.getElementById(id).innerHTML = none + opts;
+  });
+}
+
+function wlAutoDetectCols() {
+  wlHeaders.forEach(h => {
+    const l = h.toLowerCase();
+    if (/회사|상호|업체|기업|company|name/i.test(h)) {
+      document.getElementById('wl-col-company').value     = h;
+      document.getElementById('wl-col-company-pub').value = h;
+    }
+    if (/규모|size|scale|형태|대기업|중소|법인|개인/i.test(h))  document.getElementById('wl-col-scale').value    = h;
+    if (/업종|종목|industry|sector|업태/i.test(h))             document.getElementById('wl-col-industry').value = h;
+    if (/대표자|대표|representative|rep/i.test(h))             document.getElementById('wl-col-rep').value      = h;
+    if (/전화|phone|tel|연락처/i.test(h))                      document.getElementById('wl-col-phone').value    = h;
+    if (/주소|address|도로명/i.test(h))                        document.getElementById('wl-col-address').value  = h;
+  });
+}
+
+function wlClearFile() {
+  wlSheetData = []; wlHeaders = [];
+  wlFileInput.value = '';
+  wlFileNameEl.style.display = 'none';
+  wlFileNameTxt.textContent  = '';
+  document.getElementById('wl-colSelectWrap').style.display = 'none';
+  hideAlert(wlFileAlert);
+  wlCheckRunReady();
+}
+
+function wlCheckRunReady() {
+  const mode = document.querySelector('input[name="wl-mode"]:checked').value;
+  const companyCol = mode === 'v6'
+    ? document.getElementById('wl-col-company').value
+    : document.getElementById('wl-col-company-pub').value;
+  document.getElementById('wl-runBtn').disabled = !(wlSheetData.length > 0 && companyCol !== '');
+}
+
+/* ════════════════════════════════════
+   웹 조회 — 채점 로직 (Python 포팅)
+   ════════════════════════════════════ */
+const _WL_LEGAL_REMOVE = ['농업회사법인','영농조합법인','영어조합법인','주식회사','유한회사','재단법인','사단법인','협동조합','조합법인','(주)','（주）','㈜','(유)','（유）'];
+const _WL_LEGAL_FORMS  = {
+  stock:       ['주식회사','(주)','（주）','㈜','주)','(주'],
+  limited:     ['유한회사','(유)','（유）','유)'],
+  foundation:  ['재단법인'],
+  association: ['사단법인'],
+  cooperative: ['협동조합','영농조합법인','영어조합법인','조합법인'],
+  corporation: ['법인'],
+};
+
+function _wlNorm(s) { return (s || '').normalize('NFKC').toLowerCase().replace(/（/g,'(').replace(/）/g,')').replace(/\s+/g,' ').trim(); }
+
+function wlNormalizeCompany(name) {
+  let t = _wlNorm(name);
+  t = t.replace(/\(\s*주\s*\)/g,' 주식회사 ');
+  t = t.replace(/(^|\s)주\s*(?=$|\s)/g,' ');
+  t = t.replace(/(^|\s)주\)/g,' ');
+  t = t.replace(/\(주(?=$|\s)/g,' ');
+  for (const term of _WL_LEGAL_REMOVE) t = t.replace(new RegExp(term.normalize('NFKC').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),' ');
+  t = t.replace(/[\s\-_.,·ㆍ/\\|:;'"]+/g,'').replace(/[\[\]{}()<>]/g,'');
+  return t.trim();
+}
+
+function wlDetectLegalForm(text) {
+  const src = _wlNorm(text);
+  if (/\(\s*주\s*\)|(^|\s)주\s*(?=$|\s)|(^|\s)주\)|\(주(?=$|\s)/.test(src)) return 'stock';
+  for (const [form, patterns] of Object.entries(_WL_LEGAL_FORMS)) {
+    for (const p of patterns) { if (src.includes(p.normalize('NFKC').toLowerCase())) return form; }
+  }
+  return '';
+}
+
+function wlSimilarity(a, b) {
+  if (!a || !b) return 0;
+  const la = a.length, lb = b.length;
+  if (!la || !lb) return 0;
+  const prev = Array.from({length: lb + 1}, (_, j) => j);
+  const curr = new Array(lb + 1);
+  for (let i = 1; i <= la; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= lb; j++) curr[j] = a[i-1] === b[j-1] ? prev[j-1] : 1 + Math.min(prev[j], curr[j-1], prev[j-1]);
+    for (let j = 0; j <= lb; j++) prev[j] = curr[j];
+  }
+  return (1 - curr[lb] / Math.max(la, lb)) * 100;
+}
+
+function wlScoreV6(qName, qScale, qIndustry, cand) {
+  const qN = wlNormalizeCompany(qName);
+  const cN = wlNormalizeCompany(cand.name || '');
+  let score = wlSimilarity(qN, cN);
+  const reasons = [`name=${score.toFixed(1)}`];
+
+  if (qN && cN) {
+    if (qN === cN)                                  { score += 30; reasons.push('exact-name'); }
+    else if (qN.includes(cN) || cN.includes(qN))   { score += 10; reasons.push('contains-name'); }
+  }
+  const qF = wlDetectLegalForm(qName);
+  const cF = wlDetectLegalForm([cand.name, cand.entity_kind, cand.legal_type].filter(Boolean).join(' '));
+  if (qF && cF) { if (qF === cF) { score += 6; reasons.push('legal-form-match'); } else { score -= 4; reasons.push('legal-form-mismatch'); } }
+
+  const qScale2 = _wlNorm(qScale || '').replace(/[\s\-_.,/\\|:;'"]+/g,'');
+  const cScale2 = _wlNorm([cand.size, cand.entity_kind, cand.legal_type].filter(Boolean).join(' ')).replace(/[\s\-_.,/\\|:;'"]+/g,'');
+  if (qScale2 && cScale2) {
+    if (qScale2.includes(cScale2) || cScale2.includes(qScale2)) { score += 12; reasons.push('scale-match'); }
+    else if (qScale2.includes('법인') && cScale2.includes('법인')) { score += 8; reasons.push('corporation-match'); }
+    else if (qScale2.includes('개인') && cScale2.includes('개인')) { score += 8; reasons.push('personal-match'); }
+    else if ((qScale2.includes('대기업') && cScale2.includes('대기업')) || (qScale2.includes('중소') && cScale2.includes('중소'))) { score += 8; reasons.push('size-class-match'); }
+  }
+
+  const qInd = _wlNorm(qIndustry || '').replace(/[\s\-_.,·ㆍ/\\|:;'"]+/g,'').replace(/[\[\]{}()<>]/g,'');
+  const cInd = _wlNorm([cand.business_type, cand.industry, cand.industry_category].filter(Boolean).join(' ')).replace(/[\s\-_.,·ㆍ/\\|:;'"]+/g,'').replace(/[\[\]{}()<>]/g,'');
+  if (qInd && cInd) {
+    const is = wlSimilarity(qInd, cInd);
+    score += is * 0.25; reasons.push(`industry=${is.toFixed(1)}`);
+    if (qInd === cInd)                                { score += 15; reasons.push('exact-industry'); }
+    else if (qInd.includes(cInd) || cInd.includes(qInd)) { score += 10; reasons.push('contains-industry'); }
+  }
+
+  if (cand.status && cand.status.includes('폐업')) { score -= 100; reasons.push('closed-penalty=-100'); }
+  return { score: Math.round(score * 100) / 100, reason: reasons.join(','), closed: cand.status && cand.status.includes('폐업') };
+}
+
+function wlScorePublic(qName, qRep, qPhone, qAddr, cand) {
+  const qN = wlNormalizeCompany(qName);
+  const cN = wlNormalizeCompany(cand.name || '');
+  let score = wlSimilarity(qN, cN);
+  const reasons = [`name=${score.toFixed(1)}`];
+
+  if (qN && cN) {
+    if (qN === cN)                                { score += 30; reasons.push('exact-name'); }
+    else if (qN.includes(cN) || cN.includes(qN)) { score += 10; reasons.push('contains-name'); }
+  }
+  const qF = wlDetectLegalForm(qName);
+  const cF = wlDetectLegalForm([cand.name, cand.entity_kind, cand.legal_type].filter(Boolean).join(' '));
+  if (qF && cF) { if (qF === cF) { score += 6; reasons.push('legal-form-match'); } else { score -= 4; reasons.push('legal-form-mismatch'); } }
+
+  const qRepN = _wlNorm(qRep || '').replace(/[\s\-_.,·ㆍ/\\|:;'"()]+/g,'');
+  const cRepN = _wlNorm(cand.representative || '').replace(/[\s\-_.,·ㆍ/\\|:;'"()]+/g,'');
+  if (qRepN && cRepN) {
+    const rs = wlSimilarity(qRepN, cRepN);
+    score += rs * 0.30; reasons.push(`representative=${rs.toFixed(1)}`);
+    if (qRepN === cRepN)                                    { score += 25; reasons.push('exact-representative'); }
+    else if (qRepN.includes(cRepN) || cRepN.includes(qRepN)) { score += 10; reasons.push('contains-representative'); }
+  }
+
+  const qP = (qPhone || '').replace(/\D+/g,'');
+  const cP = (cand.phone || '').replace(/\D+/g,'');
+  if (qP && cP) {
+    let ps = 0, pr = '';
+    if (qP === cP)                                              { ps = 100; pr = 'exact-phone'; }
+    else if (qP.length >= 7 && cP.length >= 7 && (qP.endsWith(cP) || cP.endsWith(qP))) { ps = 85; pr = 'contains-phone'; }
+    else if (qP.length >= 4 && cP.length >= 4 && qP.slice(-4) === cP.slice(-4))         { ps = 60; pr = 'last4-phone'; }
+    if (ps) {
+      score += ps * 0.35; reasons.push(`phone=${ps.toFixed(1)}`,pr);
+      if (pr === 'exact-phone') score += 25; else if (pr !== '') score += 10;
+    }
+  }
+
+  const qA = _wlNorm(qAddr || '').replace(/\b\d{5}\b/g,'').replace(/\([^)]*\)/g,'').replace(/[\s\-_.,·ㆍ/\\|:;'"()\[\]{}<>]+/g,'');
+  const cA = _wlNorm(cand.address || '').replace(/\b\d{5}\b/g,'').replace(/\([^)]*\)/g,'').replace(/[\s\-_.,·ㆍ/\\|:;'"()\[\]{}<>]+/g,'');
+  if (qA && cA) {
+    const as2 = wlSimilarity(qA, cA);
+    score += as2 * 0.30; reasons.push(`address=${as2.toFixed(1)}`);
+    if (qA === cA)                              { score += 25; reasons.push('exact-address'); }
+    else if (qA.includes(cA) || cA.includes(qA)) { score += 15; reasons.push('contains-address'); }
+  }
+
+  if (cand.status && cand.status.includes('폐업')) { score -= 100; reasons.push('closed-penalty=-100'); }
+  return { score: Math.round(score * 100) / 100, reason: reasons.join(','), closed: cand.status && cand.status.includes('폐업') };
+}
+
+/* ════════════════════════════════════
+   웹 조회 — 메인 플로우
+   ════════════════════════════════════ */
+function wlSetProgress(text, pct) {
+  document.getElementById('wl-progressText').textContent = text;
+  document.getElementById('wl-progressPct').textContent  = Math.round(pct) + '%';
+  document.getElementById('wl-progressFill').style.width = Math.round(pct) + '%';
+}
+
+async function runWebLookup() {
+  const runAlert = document.getElementById('wl-runAlert');
+  hideAlert(runAlert);
+  document.getElementById('wl-resultSection').style.display = 'none';
+  wlResultRows = [];
+
+  const mode = document.querySelector('input[name="wl-mode"]:checked').value;
+  const isV6 = mode === 'v6';
+
+  const companyCol  = isV6 ? document.getElementById('wl-col-company').value
+                           : document.getElementById('wl-col-company-pub').value;
+  const scaleCol    = isV6 ? document.getElementById('wl-col-scale').value    : '';
+  const industryCol = isV6 ? document.getElementById('wl-col-industry').value : '';
+  const repCol      = isV6 ? '' : document.getElementById('wl-col-rep').value;
+  const phoneCol    = isV6 ? '' : document.getElementById('wl-col-phone').value;
+  const addrCol     = isV6 ? '' : document.getElementById('wl-col-address').value;
+
+  const SCORE_THRESHOLD = isV6
+    ? (industryCol ? 100 : 90)
+    : 100;
+  const PREFILTER_SCORE  = 60;
+  const MAX_CAND_DETAIL  = 10;
+
+  document.getElementById('wl-runBtn').disabled = true;
+  document.getElementById('wl-progressWrap').style.display = 'block';
+  wlSetProgress('준비 중...', 0);
+
+  const total = wlSheetData.length;
+  const pendingReview = [];
+  const tempResults   = new Array(total).fill(null);
+
+  /* ── Phase 1: search + detail ── */
+  for (let rowIdx = 0; rowIdx < total; rowIdx++) {
+    const row     = wlSheetData[rowIdx];
+    const company = String(row[companyCol] ?? '').trim();
+    wlSetProgress(`[${rowIdx + 1}/${total}] 검색: ${company}`, (rowIdx / total) * 90);
+
+    if (!company) {
+      tempResults[rowIdx] = { row, bnoList: [], status: '회사명 없음' };
+      continue;
+    }
+
+    try {
+      /* search */
+      const searchResp = await fetch(`${PROXY_URL}/search?query=${encodeURIComponent(company)}`);
+      if (!searchResp.ok) throw new Error(`HTTP ${searchResp.status}`);
+      const searchData  = await searchResp.json();
+      if (searchData.error) throw new Error(searchData.error);
+      const rawCands    = searchData.candidates || [];
+
+      /* pre-score by name to filter which detail pages to fetch */
+      const prescored = rawCands.map(c => {
+        const qN = wlNormalizeCompany(company);
+        const cN = wlNormalizeCompany(c.name || '');
+        const s  = wlSimilarity(qN, cN) + (qN && cN && (qN === cN ? 30 : qN.includes(cN) || cN.includes(qN) ? 10 : 0));
+        return { ...c, prescore: Math.round(s * 100) / 100 };
+      }).sort((a, b) => b.prescore - a.prescore);
+
+      const toFetch = prescored.filter((c, i) => i < MAX_CAND_DETAIL || c.prescore >= PREFILTER_SCORE).slice(0, MAX_CAND_DETAIL);
+
+      /* fetch details + score */
+      const scored = [];
+      for (const pc of toFetch) {
+        await sleep(400);
+        try {
+          const detResp = await fetch(`${PROXY_URL}/detail?url=${encodeURIComponent(pc.url)}`);
+          if (!detResp.ok) continue;
+          const det  = await detResp.json();
+          if (det.error) continue;
+          const res  = isV6
+            ? wlScoreV6(company, String(row[scaleCol] ?? ''), String(row[industryCol] ?? ''), det)
+            : wlScorePublic(company, String(row[repCol] ?? ''), String(row[phoneCol] ?? ''), String(row[addrCol] ?? ''), det);
+          scored.push({ ...det, ...res });
+        } catch { /* skip failed detail */ }
+      }
+      scored.sort((a, b) => b.score - a.score);
+
+      const qualified = scored.filter(c => c.score >= SCORE_THRESHOLD && c.business_no);
+      if (!qualified.length) {
+        tempResults[rowIdx] = { row, bnoList: [], status: '찾을 수 없음' };
+      } else {
+        /* check if disambiguation needed: top candidates with identical score */
+        const top   = qualified[0].score;
+        const ties  = qualified.filter(c => c.score === top);
+        if (ties.length > 1) {
+          pendingReview.push({ rowIdx, row, company, ties, qualified });
+          tempResults[rowIdx] = null; /* fill after review */
+        } else {
+          tempResults[rowIdx] = { row, bnoList: qualified.slice(0, 3), status: '성공' };
+        }
+      }
+    } catch (e) {
+      tempResults[rowIdx] = { row, bnoList: [], status: `오류: ${e.message}` };
+    }
+  }
+
+  /* ── Phase 2: review ties ── */
+  if (pendingReview.length > 0) {
+    document.getElementById('wl-progressWrap').style.display = 'none';
+    const picks = await wlShowReview(pendingReview);
+    document.getElementById('wl-progressWrap').style.display = 'block';
+    for (const item of pendingReview) {
+      const chosen = picks[item.rowIdx];
+      if (chosen) {
+        const cand = item.qualified.find(c => c.business_no === chosen);
+        tempResults[item.rowIdx] = { row: item.row, bnoList: cand ? [cand, ...item.qualified.filter(c => c !== cand).slice(0,2)] : item.qualified.slice(0,3), status: '성공' };
+      } else {
+        tempResults[item.rowIdx] = { row: item.row, bnoList: item.qualified.slice(0,3), status: '동점 — 자동 선택' };
+      }
+    }
+  }
+
+  wlSetProgress('완료!', 100);
+
+  /* ── 결과 빌드 ── */
+  let successCnt = 0, failCnt = 0;
+  wlResultRows = tempResults.map(res => {
+    if (!res) return null;
+    const base = { ...res.row };
+    const list = res.bnoList || [];
+    const r    = { ...base };
+    [0, 1, 2].forEach(i => {
+      r[`_bno${i+1}`]    = list[i]?.business_no    || '';
+      r[`_name${i+1}`]   = list[i]?.name           || '';
+      r[`_score${i+1}`]  = list[i]?.score != null  ? String(list[i].score) : '';
+      r[`_closed${i+1}`] = list[i]?.closed         ? '폐업' : '';
+    });
+    r._status = res.status;
+    if (res.status === '성공' || res.status === '동점 — 자동 선택') successCnt++; else failCnt++;
+    return r;
+  }).filter(Boolean);
+
+  setTimeout(() => { document.getElementById('wl-progressWrap').style.display = 'none'; }, 700);
+
+  wlRenderResult(wlResultRows, successCnt, failCnt);
+  document.getElementById('wl-runBtn').disabled = false;
+  wlCheckRunReady();
+}
+
+/* ── 동점 검토 UI ── */
+function wlShowReview(items) {
+  const list = document.getElementById('wl-reviewList');
+  list.innerHTML = items.map(({ rowIdx, company, ties }) => `
+    <div class="wl-cand-item" data-ridx="${rowIdx}">
+      <div style="padding:var(--space-sm) var(--space-md); background:var(--color-warn-bg); border-bottom:1px solid var(--color-hairline); font-size:0.8125rem;">
+        <strong>"${esc(company)}"</strong> — ${ties.length}개 후보가 동점입니다 (${ties[0].score}점)
+      </div>
+      ${ties.slice(0, 5).map(c => `
+        <label class="wl-cand-option">
+          <input type="radio" name="wl_r_${rowIdx}" value="${esc(c.business_no || '')}" />
+          <div>
+            <div class="wl-cand-name">${esc(c.name || '-')}</div>
+            <div class="wl-cand-detail">
+              사업자번호: ${esc(c.business_no || '-')}
+              ${c.representative ? ' · 대표자: ' + esc(c.representative) : ''}
+              ${c.address        ? ' · ' + esc(c.address.slice(0, 30)) : ''}
+            </div>
+          </div>
+        </label>
+      `).join('')}
+      <label class="wl-skip-opt">
+        <input type="radio" name="wl_r_${rowIdx}" value="" />
+        <span>첫 번째 자동 선택</span>
+      </label>
+    </div>
+  `).join('');
+
+  document.getElementById('wl-review-sub').textContent = `총 ${items.length}건의 동점 항목을 검토하세요`;
+  const overlay = document.getElementById('wl-reviewOverlay');
+  overlay.classList.add('open');
+  return new Promise(resolve => { wlReviewResolve = resolve; });
+}
+
+function wlAutoSelectFirst() {
+  document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
+    const ridx  = item.dataset.ridx;
+    const radios = [...item.querySelectorAll(`input[name="wl_r_${ridx}"]`)];
+    const first  = radios.find(r => r.value !== '');
+    if (first) { radios.forEach(r => r.checked = false); first.checked = true; }
+  });
+}
+
+function wlConfirmReview() {
+  if (!wlReviewResolve) return;
+  const picks = {};
+  document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
+    const ridx    = parseInt(item.dataset.ridx);
+    const checked = item.querySelector('input[type=radio]:checked');
+    picks[ridx] = checked ? checked.value : '';
+  });
+  document.getElementById('wl-reviewOverlay').classList.remove('open');
+  wlReviewResolve(picks);
+  wlReviewResolve = null;
+}
+
+/* ── 결과 렌더링 ── */
+function wlRenderResult(rows, successCnt, failCnt) {
+  const section = document.getElementById('wl-resultSection');
+  section.style.display = 'block';
+  document.getElementById('wl-resultTitle').textContent = `조회 완료 — 총 ${rows.length.toLocaleString()}건`;
+  document.getElementById('wl-statsWrap').innerHTML =
+    `<span class="stat-pill pill-total">전체 ${rows.length}</span>` +
+    `<span class="stat-pill pill-success">성공 ${successCnt}</span>` +
+    (failCnt > 0 ? `<span class="stat-pill pill-error">실패/건너뜀 ${failCnt}</span>` : '');
+  if (!rows.length) return;
+
+  const inputCols  = wlHeaders;
+  const outputCols = ['_bno1','_name1','_score1','_closed1','_bno2','_name2','_score2','_closed2','_bno3','_name3','_score3','_closed3','_status'];
+  const labelMap   = {
+    _bno1:'사업자번호1', _name1:'상호명1', _score1:'점수1', _closed1:'폐업여부1',
+    _bno2:'사업자번호2', _name2:'상호명2', _score2:'점수2', _closed2:'폐업여부2',
+    _bno3:'사업자번호3', _name3:'상호명3', _score3:'점수3', _closed3:'폐업여부3',
+    _status:'조회상태',
+  };
+  const allCols = [...inputCols, ...outputCols];
+  document.getElementById('wl-resultHead').innerHTML =
+    '<tr>' + allCols.map(k => `<th>${esc(labelMap[k] || k)}</th>`).join('') + '</tr>';
+
+  document.getElementById('wl-resultBody').innerHTML = rows.slice(0, MAX_PREVIEW).map(row => {
+    return '<tr>' + allCols.map(k => {
+      const val = row[k] ?? '';
+      if (k === '_status') {
+        const ok  = val === '성공' || val === '동점 — 자동 선택';
+        const bg  = ok ? 'var(--color-success-bg)'   : 'var(--color-error-bg)';
+        const clr = ok ? 'var(--color-success-text)'  : 'var(--color-error-text)';
+        return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;
+      }
+      if (k === '_closed1' || k === '_closed2' || k === '_closed3') {
+        if (val === '폐업') return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:var(--color-closed-bg);color:var(--color-closed-text)">${esc(val)}</span></td>`;
+      }
+      return `<td title="${esc(String(val))}">${esc(String(val))}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+
+  document.getElementById('wl-maxRowsNote').textContent = rows.length > MAX_PREVIEW
+    ? `* 화면에는 ${MAX_PREVIEW}행까지 표시됩니다. 전체 데이터는 다운로드 파일에 포함됩니다.`
+    : '';
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── 다운로드 ── */
+function wlDownloadResult() {
+  if (!wlResultRows.length) return;
+  const inputCols  = wlHeaders;
+  const outputCols = ['_bno1','_name1','_score1','_closed1','_bno2','_name2','_score2','_closed2','_bno3','_name3','_score3','_closed3','_status'];
+  const labelMap   = {
+    _bno1:'사업자번호1', _name1:'상호명1', _score1:'점수1', _closed1:'폐업여부1',
+    _bno2:'사업자번호2', _name2:'상호명2', _score2:'점수2', _closed2:'폐업여부2',
+    _bno3:'사업자번호3', _name3:'상호명3', _score3:'점수3', _closed3:'폐업여부3',
+    _status:'조회상태',
+  };
+  const allCols   = [...inputCols, ...outputCols];
+  const headerRow = allCols.map(k => labelMap[k] || k);
+  const dataRows  = wlResultRows.map(r => allCols.map(k => { const v = r[k]; return v == null ? '' : v; }));
+  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+  ws['!cols'] = allCols.map(k => ({
+    wch: { _bno1:16, _bno2:16, _bno3:16, _name1:24, _name2:24, _name3:24,
+           _score1:8, _score2:8, _score3:8, _closed1:8, _closed2:8, _closed3:8, _status:16 }[k] || 15
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '사업자번호조회');
+  const now = new Date();
+  const ts  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `비즈노_사업자번호조회_${ts}.xlsx`);
 }
 </script>
 </body>

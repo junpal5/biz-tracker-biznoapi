@@ -965,10 +965,11 @@ async function runQuery() {
   });
 
   /* ── Phase 1: 회사명 검색 ── */
+  const phase1End = nameRows.length > 0 ? 40 : 0;
   const nameResults = [];
   for (let i = 0; i < nameRows.length; i++) {
     const { rowIdx, row, name } = nameRows[i];
-    setProgress(`[1/2] 회사명 검색 (${i + 1}/${nameRows.length}): ${name}`, (i / (nameRows.length || 1)) * 40);
+    setProgress(`[1/2] 회사명 검색 (${i + 1}/${nameRows.length}): ${name}`, (i / nameRows.length) * phase1End);
     try {
       const candidates = await searchByName(name);
       nameResults.push({ rowIdx, row, name, candidates });
@@ -1022,7 +1023,7 @@ async function runQuery() {
   const detailMap = {};
   for (let i = 0; i < allLookup.length; i++) {
     const { rowIdx, bizno } = allLookup[i];
-    setProgress(`[2/2] 상세 조회 (${i + 1}/${allLookup.length}): ${bizno}`, 40 + (i / (allLookup.length || 1)) * 58);
+    setProgress(`[2/2] 상세 조회 (${i + 1}/${allLookup.length}): ${bizno}`, phase1End + (i / (allLookup.length || 1)) * (98 - phase1End));
     try {
       const detail = await getDetail(bizno);
       detailMap[rowIdx] = { detail };

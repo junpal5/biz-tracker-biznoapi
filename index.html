@@ -662,6 +662,7 @@
     <div class="card-header">
       <div class="step-badge">2</div>
       <h2>엑셀 파일 업로드 및 열 선택</h2>
+      <span style="margin-left:auto; font-size:0.75rem; color:var(--color-stone); font-weight:400;">최대 200건이 권장됩니다 (약 20분 소요)</span>
     </div>
     <div class="card-body">
       <div class="file-area" id="wl-fileArea">
@@ -715,6 +716,7 @@
           <p class="hint" style="margin-top:var(--space-sm);">100점 이상인 후보를 결과에 포함합니다. 보조 정보가 있을수록 정확도가 높아집니다.</p>
         </div>
       </div>
+      <div class="alert alert-warning" id="wl-countAlert"></div>
       <div class="alert alert-error" id="wl-fileAlert"></div>
     </div>
   </div>
@@ -1570,7 +1572,8 @@ function downloadResult() {
 /* ════════════════════════════════════
    웹 조회 — 공통 상태
    ════════════════════════════════════ */
-const PROXY_URL    = 'http://localhost:5000';
+const PROXY_URL          = 'http://localhost:5000';
+const WL_RECOMMENDED_MAX = 200;
 let wlSheetData    = [];
 let wlHeaders      = [];
 let wlResultRows   = [];
@@ -1645,6 +1648,18 @@ function wlHandleFile(file) {
       document.getElementById('wl-colSelectWrap').style.display = 'block';
       wlFileNameTxt.textContent = `📄 ${file.name}  (${wlSheetData.length.toLocaleString()} 행)`;
       wlFileNameEl.style.display = 'flex';
+      /* 권장 건수 초과 경고 */
+      const countAlert = document.getElementById('wl-countAlert');
+      if (wlSheetData.length > WL_RECOMMENDED_MAX) {
+        const est = Math.round(wlSheetData.length * 6 / 60);
+        showAlert(countAlert,
+          `⚠️ 업로드한 파일이 ${wlSheetData.length.toLocaleString()}건으로 권장 최대치(${WL_RECOMMENDED_MAX}건)를 초과합니다.\n` +
+          `예상 소요시간은 약 ${est}분이며, 중간에 브라우저가 절전 모드에 진입하거나 탭을 닫으면 진행 내용이 모두 초기화됩니다.\n` +
+          `대량 처리는 기존 .py 스크립트 사용을 권장합니다.`
+        );
+      } else {
+        hideAlert(countAlert);
+      }
       wlCheckRunReady();
     } catch (err) { showAlert(wlFileAlert, '⚠️ 파일 파싱 오류: ' + err.message); }
   };
@@ -1687,6 +1702,7 @@ function wlClearFile() {
   wlFileNameTxt.textContent  = '';
   document.getElementById('wl-colSelectWrap').style.display = 'none';
   hideAlert(wlFileAlert);
+  hideAlert(document.getElementById('wl-countAlert'));
   wlCheckRunReady();
 }
 

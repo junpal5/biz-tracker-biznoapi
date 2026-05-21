@@ -287,6 +287,35 @@
     .home-nav-label { font-size: 0.9375rem; font-weight: 700; color: var(--color-ink); }
     .home-nav-desc  { font-size: 0.75rem; color: var(--color-steel); text-align: center; line-height: 1.4; }
 
+    /* ── Field Selector ── */
+    .field-sel-toolbar {
+      display: flex; align-items: center; gap: var(--space-sm);
+      margin-bottom: var(--space-md); flex-wrap: wrap;
+    }
+    .field-sel-toolbar span { font-size: 0.8125rem; color: var(--color-steel); margin-right: auto; }
+    .btn-field-all, .btn-field-none { padding: 5px var(--space-sm); background: transparent; border: 1px solid var(--color-hairline); border-radius: var(--rounded-full); font-size: 0.75rem; font-weight: 600; color: var(--color-charcoal); font-family: var(--font); cursor: pointer; transition: border-color .15s, background .15s; }
+    .btn-field-all:hover, .btn-field-none:hover { border-color: var(--color-primary); background: var(--color-surface); }
+
+    .field-groups { display: flex; flex-direction: column; gap: var(--space-md); }
+    .field-group-title {
+      font-size: 0.75rem; font-weight: 700; color: var(--color-steel);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      margin-bottom: var(--space-xs); display: flex; align-items: center; gap: var(--space-sm);
+    }
+    .field-group-title button { padding: 2px 8px; background: transparent; border: 1px solid var(--color-hairline); border-radius: var(--rounded-full); font-size: 0.6875rem; font-weight: 600; color: var(--color-stone); font-family: var(--font); cursor: pointer; transition: border-color .15s; text-transform: none; letter-spacing: 0; }
+    .field-group-title button:hover { border-color: var(--color-charcoal); color: var(--color-charcoal); }
+    .field-checkboxes { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); }
+    .field-check-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .field-check-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--color-brand-blue); cursor: pointer; flex-shrink: 0; }
+    .field-check-item span { font-size: 0.8125rem; color: var(--color-charcoal); user-select: none; }
+    .field-check-item.paid-only span { color: var(--color-stone); }
+    .field-check-item.paid-only span::after { content: ' (유료)'; font-size: 0.6875rem; color: var(--color-brand-blue-700); }
+    .field-check-item.paid-only input:disabled { opacity: 0.4; }
+    .field-check-item.paid-only.available span { color: var(--color-charcoal); }
+    .field-check-item.paid-only.available span::after { color: var(--color-brand-blue-700); }
+
+    @media (max-width: 600px) { .field-checkboxes { gap: var(--space-xs) var(--space-sm); } }
+
     /* ── Back button ── */
     .page-back-btn {
       display: inline-flex; align-items: center; gap: 5px;
@@ -540,10 +569,27 @@
     </div>
   </div>
 
-  <!-- Step 3: 실행 -->
+  <!-- Step 3: 결과 필드 선택 -->
   <div class="card">
     <div class="card-header">
       <div class="step-badge">3</div>
+      <h2>결과 필드 선택</h2>
+      <span style="font-size:0.75rem; color:var(--color-stone); font-weight:400; margin-left:4px;">— 조회 결과 및 Excel에 포함할 항목</span>
+    </div>
+    <div class="card-body">
+      <div class="field-sel-toolbar">
+        <span id="fieldSelCount"></span>
+        <button class="btn-field-all"  onclick="setAllFields(true)">전체 선택</button>
+        <button class="btn-field-none" onclick="setAllFields(false)">전체 해제</button>
+      </div>
+      <div class="field-groups" id="fieldGroupsContainer"></div>
+    </div>
+  </div>
+
+  <!-- Step 4: 실행 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-badge">4</div>
       <h2>조회 실행</h2>
     </div>
     <div class="card-body">
@@ -1060,7 +1106,199 @@ function onApiTypeChange() {
   const badge = document.getElementById('apiBadge');
   if (usePaidApi) { badge.textContent = '유료 API (papi)'; badge.className = 'api-badge paid'; }
   else            { badge.textContent = '무료 API (fapi)'; badge.className = 'api-badge free'; }
+  updateFieldSelectorPaidState();
 }
+
+/* ════════════════════════════════════
+   필드 선택기
+   ════════════════════════════════════ */
+
+/* 무료 API에서도 제공되는 필드 */
+const FAPI_FIELDS = new Set([
+  'bno','company','ceo','cno',
+  'BsttCd','bstt','TaxTypeCd','taxtype',
+  'openDt','EndDt','fdate','enpEstblDt',
+  'zip_cd','adres','rdnmadr',
+  'telno','faxno',
+  'bzdo','bizcnd',
+  'hmgPg','tno_1st',
+  'lat','lon',
+]);
+
+/* 카테고리별 필드 그룹 정의 */
+const FIELD_GROUPS_DEF = [
+  {
+    label: '기본 식별',
+    fields: [
+      { key: 'bno',       label: '사업자등록번호', default: true  },
+      { key: 'company',   label: '상호명',         default: true  },
+      { key: 'companyen', label: '상호명(영문)',    default: false },
+      { key: 'ceo',       label: '대표자',         default: true  },
+      { key: 'cno',       label: '법인등록번호',   default: false },
+    ],
+  },
+  {
+    label: '사업자 상태',
+    fields: [
+      { key: 'bstt',      label: '사업자상태',   default: true  },
+      { key: 'BsttCd',    label: '상태코드',     default: false },
+      { key: 'taxtype',   label: '과세유형',     default: true  },
+      { key: 'TaxTypeCd', label: '과세유형코드', default: false },
+    ],
+  },
+  {
+    label: '날짜',
+    fields: [
+      { key: 'openDt',     label: '개업일', default: false },
+      { key: 'fdate',      label: '설립일', default: false },
+      { key: 'enpEstblDt', label: '설립일(papi)', default: false },
+      { key: 'EndDt',      label: '폐업일', default: true  },
+    ],
+  },
+  {
+    label: '주소',
+    fields: [
+      { key: 'addr_n',  label: '도로명주소',     default: true  },
+      { key: 'rdnmadr', label: '도로명주소(fapi)', default: false },
+      { key: 'addr_o',  label: '주소(지번)',      default: false },
+      { key: 'adres',   label: '주소(지번/fapi)', default: false },
+      { key: 'zipcd',   label: '우편번호',        default: false },
+      { key: 'zip_cd',  label: '우편번호(fapi)',  default: false },
+    ],
+  },
+  {
+    label: '연락처',
+    fields: [
+      { key: 'phone',  label: '전화번호',     default: true  },
+      { key: 'telno',  label: '전화번호(fapi)', default: false },
+      { key: 'fax',    label: '팩스번호',     default: false },
+      { key: 'faxno',  label: '팩스번호(fapi)', default: false },
+    ],
+  },
+  {
+    label: '업종 · 업태',
+    fields: [
+      { key: 'btype',   label: '업태',                  default: true  },
+      { key: 'bizcnd',  label: '업태(fapi)',             default: false },
+      { key: 'bsector', label: '종목',                  default: true  },
+      { key: 'bzdo',    label: '업종(fapi)',             default: false },
+      { key: 'hscd',    label: '국세청 업종코드',       default: false },
+      { key: 'kscd',    label: '표준산업분류 업종코드', default: false },
+    ],
+  },
+  {
+    label: '기업 정보',
+    fields: [
+      { key: 'scale',    label: '기업규모',       default: false },
+      { key: 'emp',      label: '직원수',         default: false },
+      { key: 'homepage', label: '홈페이지',       default: false },
+      { key: 'hmgPg',    label: '홈페이지(fapi)', default: false },
+      { key: 'saleno',   label: '통신판매업번호',       default: false },
+      { key: 'tno_1st',  label: '통신판매업번호(fapi)', default: false },
+    ],
+  },
+  {
+    label: '위치',
+    fields: [
+      { key: 'lat', label: '위도', default: false },
+      { key: 'lng', label: '경도', default: false },
+      { key: 'lon', label: '경도(fapi)', default: false },
+    ],
+  },
+  {
+    label: '재무 (유료 전용)',
+    fields: [
+      { key: 'bizyear', label: '재무기준년도', default: false },
+      { key: 'saleamt', label: '매출액',       default: false },
+      { key: 'bzoppft', label: '영업이익',     default: false },
+      { key: 'crtmnpf', label: '당기순이익',   default: false },
+      { key: 'cptlamt', label: '자본금',       default: false },
+      { key: 'tastamt', label: '총자산',       default: false },
+      { key: 'tdbtamt', label: '총부채',       default: false },
+      { key: 'tcptamt', label: '총자본',       default: false },
+    ],
+  },
+  {
+    label: '메타',
+    fields: [
+      { key: 'udate',   label: '갱신일',     default: false },
+      { key: 'regdate', label: '최초등록일', default: false },
+    ],
+  },
+];
+
+function buildFieldSelector() {
+  const container = document.getElementById('fieldGroupsContainer');
+  container.innerHTML = FIELD_GROUPS_DEF.map(group => `
+    <div>
+      <div class="field-group-title">
+        ${esc(group.label)}
+        <button onclick="setGroupFields('${esc(group.label)}', true)">전체</button>
+        <button onclick="setGroupFields('${esc(group.label)}', false)">해제</button>
+      </div>
+      <div class="field-checkboxes">
+        ${group.fields.map(f => {
+          const isPaid = !FAPI_FIELDS.has(f.key);
+          return `
+            <label class="field-check-item ${isPaid ? 'paid-only' : ''}" data-group="${esc(group.label)}" data-key="${esc(f.key)}">
+              <input type="checkbox" id="fsel_${esc(f.key)}"
+                ${f.default ? 'checked' : ''}
+                ${isPaid && !usePaidApi ? 'disabled' : ''}
+                onchange="onFieldSelChange()" />
+              <span>${esc(f.label)}</span>
+            </label>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+  updateFieldSelectorPaidState();
+  updateFieldSelCount();
+}
+
+function updateFieldSelectorPaidState() {
+  document.querySelectorAll('#fieldGroupsContainer .field-check-item.paid-only').forEach(item => {
+    const key   = item.dataset.key;
+    const isPaidField = !FAPI_FIELDS.has(key);
+    const cb    = item.querySelector('input[type=checkbox]');
+    if (isPaidField) {
+      if (usePaidApi) {
+        cb.disabled = false;
+        item.classList.add('available');
+      } else {
+        cb.disabled = true;
+        cb.checked  = false;
+        item.classList.remove('available');
+      }
+    }
+  });
+  updateFieldSelCount();
+}
+
+function onFieldSelChange() { updateFieldSelCount(); }
+
+function updateFieldSelCount() {
+  const total    = document.querySelectorAll('#fieldGroupsContainer input[type=checkbox]').length;
+  const checked  = document.querySelectorAll('#fieldGroupsContainer input[type=checkbox]:checked').length;
+  document.getElementById('fieldSelCount').textContent = `${checked}/${total}개 선택됨`;
+}
+
+function setAllFields(val) {
+  document.querySelectorAll('#fieldGroupsContainer input[type=checkbox]:not(:disabled)').forEach(cb => { cb.checked = val; });
+  updateFieldSelCount();
+}
+
+function setGroupFields(groupLabel, val) {
+  document.querySelectorAll(`#fieldGroupsContainer .field-check-item[data-group="${groupLabel}"] input[type=checkbox]:not(:disabled)`).forEach(cb => { cb.checked = val; });
+  updateFieldSelCount();
+}
+
+function getSelectedFields() {
+  return [...document.querySelectorAll('#fieldGroupsContainer input[type=checkbox]:checked')]
+    .map(cb => cb.id.replace('fsel_', ''));
+}
+
+/* 초기화 (페이지 로드 시) */
+buildFieldSelector();
 
 /* ════════════════════════════════════
    파일 처리
@@ -1460,9 +1698,10 @@ function renderResult(rows, successCnt, failCnt, apiFields) {
 
   if (!rows.length) return;
 
-  /* 컬럼: 원본열 → API필드(중복 제외) → 조회상태 */
+  /* 컬럼: 원본열 → 선택된 API필드(중복 제외) → 조회상태 */
   const origCols  = headers;
-  const extraCols = apiFields.filter(k => !headers.includes(k));
+  const selectedFields = getSelectedFields();
+  const extraCols = apiFields.filter(k => !headers.includes(k) && selectedFields.includes(k));
   const allCols   = [...origCols, ...extraCols, '_status'];
 
   document.getElementById('resultHead').innerHTML =
@@ -1526,11 +1765,12 @@ async function runTestApi() {
 function downloadResult() {
   if (!resultRows.length) return;
 
-  /* 1. 결과 행에 있는 모든 필드 수집 후 우선순서 정렬, _status 맨 끝 */
+  /* 1. 원본열 + 선택된 API필드만 포함, 우선순서 정렬, _status 맨 끝 */
+  const selectedFields = getSelectedFields();
   const fieldSet = new Set();
   resultRows.forEach(r => Object.keys(r).forEach(k => fieldSet.add(k)));
   const orderedFields = [
-    ...sortFields([...fieldSet].filter(k => k !== '_status')),
+    ...sortFields([...fieldSet].filter(k => k !== '_status' && (headers.includes(k) || selectedFields.includes(k)))),
     '_status',
   ];
 

@@ -384,7 +384,7 @@
     .wl-cand-item:last-child { margin-bottom: 0; }
     .wl-cand-option { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; transition: background .15s; }
     .wl-cand-option:hover { background: var(--color-surface-soft); }
-    .wl-cand-option input[type=radio] { flex-shrink: 0; margin-top: 3px; accent-color: var(--color-brand-blue); }
+    .wl-cand-option input[type=checkbox] { flex-shrink: 0; margin-top: 3px; accent-color: var(--color-brand-blue); cursor: pointer; }
     .wl-cand-name   { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
     .wl-cand-detail { font-size: 0.75rem; color: var(--color-steel); margin-top: 2px; line-height: 1.5; }
     .wl-score-badge { display: inline-block; padding: 2px 6px; border-radius: var(--rounded-full); font-size: 0.6875rem; font-weight: 700; }
@@ -2199,10 +2199,13 @@ async function runWebLookup() {
     const picks = await wlShowReview(pendingReview);
     document.getElementById('wl-progressWrap').style.display = 'block';
     for (const item of pendingReview) {
-      const chosen = picks[item.rowIdx];
-      if (chosen) {
-        const cand = item.qualified.find(c => c.business_no === chosen);
-        tempResults[item.rowIdx] = { row: item.row, bnoList: cand ? [cand, ...item.qualified.filter(c => c !== cand).slice(0,2)] : item.qualified.slice(0,3), status: '성공' };
+      const chosen = picks[item.rowIdx] || []; // array of selected business_nos
+      if (chosen.length > 0) {
+        const selectedCands = chosen.map(bno => item.qualified.find(c => c.business_no === bno)).filter(Boolean);
+        const rest = item.qualified.filter(c => !chosen.includes(c.business_no));
+        const bnoList = [...selectedCands, ...rest].slice(0, 3);
+        const status  = selectedCands.length > 1 ? '동점 — 복수 선택' : '성공';
+        tempResults[item.rowIdx] = { row: item.row, bnoList, status };
       } else {
         tempResults[item.rowIdx] = { row: item.row, bnoList: item.qualified.slice(0,3), status: '동점 — 자동 선택' };
       }
@@ -2225,7 +2228,7 @@ async function runWebLookup() {
       r[`_closed${i+1}`] = list[i]?.closed         ? '폐업' : '';
     });
     r._status = res.status;
-    if (res.status === '성공' || res.status === '동점 — 자동 선택') successCnt++; else failCnt++;
+    if (res.status === '성공' || res.status === '동점 — 자동 선택' || res.status === '동점 — 복수 선택') successCnt++; else failCnt++;
     return r;
   }).filter(Boolean);
 
@@ -2246,7 +2249,7 @@ function wlShowReview(items) {
       </div>
       ${ties.slice(0, 5).map(c => `
         <label class="wl-cand-option">
-          <input type="radio" name="wl_r_${rowIdx}" value="${esc(c.business_no || '')}" />
+          <input type="checkbox" name="wl_r_${rowIdx}" value="${esc(c.business_no || '')}" />
           <div>
             <div class="wl-cand-name">${esc(c.name || '-')}</div>
             <div class="wl-cand-detail">
@@ -2257,10 +2260,6 @@ function wlShowReview(items) {
           </div>
         </label>
       `).join('')}
-      <label class="wl-skip-opt">
-        <input type="radio" name="wl_r_${rowIdx}" value="" />
-        <span>첫 번째 자동 선택</span>
-      </label>
     </div>
   `).join('');
 
@@ -2273,9 +2272,8 @@ function wlShowReview(items) {
 function wlAutoSelectFirst() {
   document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
     const ridx  = item.dataset.ridx;
-    const radios = [...item.querySelectorAll(`input[name="wl_r_${ridx}"]`)];
-    const first  = radios.find(r => r.value !== '');
-    if (first) { radios.forEach(r => r.checked = false); first.checked = true; }
+    const boxes = [...item.querySelectorAll(`input[name="wl_r_${ridx}"]`)];
+    boxes.forEach((b, i) => { b.checked = i === 0; });
   });
 }
 
@@ -2283,9 +2281,9 @@ function wlConfirmReview() {
   if (!wlReviewResolve) return;
   const picks = {};
   document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
-    const ridx    = parseInt(item.dataset.ridx);
-    const checked = item.querySelector('input[type=radio]:checked');
-    picks[ridx] = checked ? checked.value : '';
+    const ridx = parseInt(item.dataset.ridx);
+    picks[ridx] = [...item.querySelectorAll('input[type=checkbox]:checked')]
+      .map(b => b.value).filter(Boolean);
   });
   document.getElementById('wl-reviewOverlay').classList.remove('open');
   wlReviewResolve(picks);
@@ -2319,7 +2317,7 @@ function wlRenderResult(rows, successCnt, failCnt) {
     return '<tr>' + allCols.map(k => {
       const val = row[k] ?? '';
       if (k === '_status') {
-        const ok  = val === '성공' || val === '동점 — 자동 선택';
+        const ok  = val === '성공' || val === '동점 — 자동 선택' || val === '동점 — 복수 선택';
         const bg  = ok ? 'var(--color-success-bg)'   : 'var(--color-error-bg)';
         const clr = ok ? 'var(--color-success-text)'  : 'var(--color-error-text)';
         return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;

@@ -392,6 +392,8 @@
     .wl-score-mid  { background: var(--color-warn-bg); color: var(--color-warn-text); }
     .wl-skip-opt { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; background: var(--color-surface-soft); }
     .wl-skip-opt span { font-size: 0.8125rem; color: var(--color-stone); }
+    .wl-reverify-bar  { height: 6px; background: var(--color-hairline); border-radius: 9999px; overflow: hidden; margin-top: var(--space-xs); }
+    .wl-reverify-fill { height: 100%; background: var(--color-brand-blue); border-radius: 9999px; width: 0%; transition: width .3s; }
 
     @media (max-width: 600px) {
       .home-nav-grid { grid-template-columns: 1fr; max-width: 320px; }
@@ -807,6 +809,28 @@
         </table>
       </div>
       <p class="max-rows-note" id="wl-maxRowsNote"></p>
+    </div>
+  </div>
+
+  <!-- 재검증 카드 -->
+  <div class="card" id="wl-reVerifySection" style="display:none;">
+    <div class="card-header">
+      <div class="step-badge">↺</div>
+      <h2>재검증</h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.875rem; color:var(--color-charcoal); margin-bottom:var(--space-md);">
+        동점 항목 <strong id="wl-reVerifyCount">0</strong>건에 대해 후보 상세 페이지를 재조회하고 점수를 다시 계산합니다. 단독 1위 후보가 확정되면 <em>재검증 완료</em>로, 여전히 동점이면 <em>재검증 — 동점 유지</em>로 표시됩니다.<br>
+        <span style="font-size:0.75rem; color:var(--color-stone);">* server.py (Flask 프록시)가 실행 중이어야 합니다.</span>
+      </p>
+      <div id="wl-reVerifyProgressWrap" style="display:none; margin-bottom:var(--space-md);">
+        <div style="display:flex; justify-content:space-between; font-size:0.8125rem; color:var(--color-charcoal); margin-bottom:4px;">
+          <span id="wl-reVerifyProgressText">재검증 중...</span>
+          <span id="wl-reVerifyProgressPct">0%</span>
+        </div>
+        <div class="wl-reverify-bar"><div class="wl-reverify-fill" id="wl-reVerifyFill"></div></div>
+      </div>
+      <button class="btn-run" id="wl-reVerifyBtn" onclick="runWlReVerify()" style="width:auto; padding:9px 28px;">재검증 시작 ▶</button>
     </div>
   </div>
 
@@ -1817,6 +1841,8 @@ const WL_RECOMMENDED_MAX = 200;
 let wlSheetData    = [];
 let wlHeaders      = [];
 let wlResultRows   = [];
+let wlRunMode      = 'v6';
+let wlColMap       = {};
 let wlReviewResolve = null;
 
 /* ── 프록시 연결 확인 ── */
@@ -2114,6 +2140,9 @@ async function runWebLookup() {
   const phoneCol    = isV6 ? '' : document.getElementById('wl-col-phone').value;
   const addrCol     = isV6 ? '' : document.getElementById('wl-col-address').value;
 
+  wlRunMode = mode;
+  wlColMap  = { company: companyCol, scale: scaleCol, industry: industryCol, rep: repCol, phone: phoneCol, addr: addrCol };
+
   const SCORE_THRESHOLD = isV6
     ? (industryCol ? 100 : 90)
     : 100;
@@ -2317,9 +2346,10 @@ function wlRenderResult(rows, successCnt, failCnt) {
     return '<tr>' + allCols.map(k => {
       const val = row[k] ?? '';
       if (k === '_status') {
-        const ok  = val === '성공' || val === '동점 — 자동 선택' || val === '동점 — 복수 선택';
-        const bg  = ok ? 'var(--color-success-bg)'   : 'var(--color-error-bg)';
-        const clr = ok ? 'var(--color-success-text)'  : 'var(--color-error-text)';
+        const ok   = ['성공', '재검증 완료', '동점 — 자동 선택', '동점 — 복수 선택'].includes(val);
+        const warn = val === '재검증 — 동점 유지';
+        const bg   = ok ? 'var(--color-success-bg)' : warn ? 'var(--color-warn-bg)' : 'var(--color-error-bg)';
+        const clr  = ok ? 'var(--color-success-text)' : warn ? 'var(--color-warn-text)' : 'var(--color-error-text)';
         return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;
       }
       if (k === '_closed1' || k === '_closed2' || k === '_closed3') {
@@ -2333,6 +2363,95 @@ function wlRenderResult(rows, successCnt, failCnt) {
     ? `* 화면에는 ${MAX_PREVIEW}행까지 표시됩니다. 전체 데이터는 다운로드 파일에 포함됩니다.`
     : '';
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  wlShowReVerifyBtnIfNeeded();
+}
+
+/* ── 재검증 ── */
+function wlShowReVerifyBtnIfNeeded() {
+  const tiedCount = wlResultRows.filter(r => r && r._bno2).length;
+  const sec = document.getElementById('wl-reVerifySection');
+  if (tiedCount > 0) {
+    document.getElementById('wl-reVerifyCount').textContent = tiedCount;
+    sec.style.display = 'block';
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function wlSetReVerifyProgress(text, pct) {
+  document.getElementById('wl-reVerifyProgressText').textContent = text;
+  document.getElementById('wl-reVerifyProgressPct').textContent  = Math.round(pct) + '%';
+  document.getElementById('wl-reVerifyFill').style.width         = Math.round(pct) + '%';
+}
+
+async function runWlReVerify() {
+  const btn = document.getElementById('wl-reVerifyBtn');
+  btn.disabled = true;
+  const progressWrap = document.getElementById('wl-reVerifyProgressWrap');
+  progressWrap.style.display = 'block';
+  wlSetReVerifyProgress('준비 중...', 0);
+
+  const tiedIdxs = wlResultRows
+    .map((r, i) => ({ i, r }))
+    .filter(({ r }) => r && r._bno2);
+
+  for (let t = 0; t < tiedIdxs.length; t++) {
+    const { i, r } = tiedIdxs[t];
+    const company  = String(r[wlColMap.company]  ?? '').trim();
+    const scale    = String(r[wlColMap.scale]    ?? '');
+    const industry = String(r[wlColMap.industry] ?? '');
+    const rep      = String(r[wlColMap.rep]      ?? '');
+    const phone    = String(r[wlColMap.phone]    ?? '');
+    const addr     = String(r[wlColMap.addr]     ?? '');
+
+    wlSetReVerifyProgress(`재검증 (${t + 1}/${tiedIdxs.length}): ${company}`, (t / tiedIdxs.length) * 95);
+
+    const bnos = [r._bno1, r._bno2, r._bno3].filter(Boolean);
+    const reCands = [];
+
+    for (const bno of bnos) {
+      const digits = bno.replace(/\D+/g, '');
+      if (digits.length !== 10) continue;
+      const detailUrl = `https://www.bizno.net/article/${digits}`;
+      try {
+        const resp = await fetch(`${PROXY_URL}/detail?url=${encodeURIComponent(detailUrl)}`);
+        if (!resp.ok) continue;
+        const det = await resp.json();
+        if (det.error) continue;
+        const res = wlRunMode === 'v6'
+          ? wlScoreV6(company, scale, industry, det)
+          : wlScorePublic(company, rep, phone, addr, det);
+        reCands.push({ ...det, ...res, business_no: det.business_no || bno });
+      } catch { /* skip failed fetch */ }
+      await sleep(400);
+    }
+
+    if (!reCands.length) continue;
+    reCands.sort((a, b) => b.score - a.score);
+
+    const bestScore = reCands[0].score;
+    const winners   = reCands.filter(c => c.score === bestScore);
+    const newStatus = winners.length === 1 ? '재검증 완료' : '재검증 — 동점 유지';
+
+    const newRow = { ...r };
+    [0, 1, 2].forEach(j => {
+      newRow[`_bno${j+1}`]    = reCands[j]?.business_no                    || '';
+      newRow[`_name${j+1}`]   = reCands[j]?.name                           || '';
+      newRow[`_score${j+1}`]  = reCands[j]?.score != null ? String(reCands[j].score) : '';
+      newRow[`_closed${j+1}`] = reCands[j]?.closed ? '폐업' : '';
+    });
+    newRow._status = newStatus;
+    wlResultRows[i] = newRow;
+  }
+
+  wlSetReVerifyProgress('완료!', 100);
+  setTimeout(() => { progressWrap.style.display = 'none'; }, 700);
+
+  const OK_STATUSES = new Set(['성공', '재검증 완료', '동점 — 자동 선택', '동점 — 복수 선택', '재검증 — 동점 유지']);
+  const successCnt = wlResultRows.filter(r => r && OK_STATUSES.has(r._status)).length;
+  const failCnt    = wlResultRows.length - successCnt;
+  wlRenderResult(wlResultRows, successCnt, failCnt);
+  btn.disabled = false;
 }
 
 /* ── 다운로드 ── */

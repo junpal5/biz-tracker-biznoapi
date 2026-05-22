@@ -189,9 +189,11 @@
 
     /* ── Progress ── */
     .progress-wrap { display: none; margin-top: var(--space-lg); }
-    .progress-label { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--color-steel); margin-bottom: var(--space-xs); }
+    .progress-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--color-steel); margin-bottom: var(--space-xs); }
     .progress-bar-bg { background: var(--color-hairline); border-radius: var(--rounded-full); height: 6px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: var(--color-brand-coral); border-radius: var(--rounded-full); transition: width .3s ease; width: 0%; }
+    .btn-stop { padding: 4px 14px; background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: var(--rounded-full); font-size: 0.75rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s, color .15s; line-height: 1.4; }
+    .btn-stop:hover { background: #dc2626; color: #fff; }
 
     /* ── Disambiguation ── */
     .disambig-item { border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); overflow: hidden; margin-bottom: var(--space-md); }
@@ -384,7 +386,7 @@
     .wl-cand-item:last-child { margin-bottom: 0; }
     .wl-cand-option { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; transition: background .15s; }
     .wl-cand-option:hover { background: var(--color-surface-soft); }
-    .wl-cand-option input[type=radio] { flex-shrink: 0; margin-top: 3px; accent-color: var(--color-brand-blue); }
+    .wl-cand-option input[type=checkbox] { flex-shrink: 0; margin-top: 3px; accent-color: var(--color-brand-blue); cursor: pointer; }
     .wl-cand-name   { font-size: 0.875rem; font-weight: 600; color: var(--color-ink); }
     .wl-cand-detail { font-size: 0.75rem; color: var(--color-steel); margin-top: 2px; line-height: 1.5; }
     .wl-score-badge { display: inline-block; padding: 2px 6px; border-radius: var(--rounded-full); font-size: 0.6875rem; font-weight: 700; }
@@ -392,6 +394,8 @@
     .wl-score-mid  { background: var(--color-warn-bg); color: var(--color-warn-text); }
     .wl-skip-opt { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-md); cursor: pointer; background: var(--color-surface-soft); }
     .wl-skip-opt span { font-size: 0.8125rem; color: var(--color-stone); }
+    .wl-reverify-bar  { height: 6px; background: var(--color-hairline); border-radius: 9999px; overflow: hidden; margin-top: var(--space-xs); }
+    .wl-reverify-fill { height: 100%; background: var(--color-brand-blue); border-radius: 9999px; width: 0%; transition: width .3s; }
 
     @media (max-width: 600px) {
       .home-nav-grid { grid-template-columns: 1fr; max-width: 320px; }
@@ -597,7 +601,10 @@
       <div class="progress-wrap" id="progressWrap">
         <div class="progress-label">
           <span id="progressText">처리 중...</span>
-          <span id="progressPct">0%</span>
+          <span style="display:flex; align-items:center; gap:var(--space-sm);">
+            <span id="progressPct">0%</span>
+            <button class="btn-stop" id="stopBtn" onclick="stopQuery()">⏹ 중단</button>
+          </span>
         </div>
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="progressFill"></div>
@@ -810,6 +817,28 @@
     </div>
   </div>
 
+  <!-- 재검증 카드 -->
+  <div class="card" id="wl-reVerifySection" style="display:none;">
+    <div class="card-header">
+      <div class="step-badge">↺</div>
+      <h2>재검증</h2>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.875rem; color:var(--color-charcoal); margin-bottom:var(--space-md);">
+        동점 항목 <strong id="wl-reVerifyCount">0</strong>건에 대해 후보 상세 페이지를 재조회하고 점수를 다시 계산합니다. 단독 1위 후보가 확정되면 <em>재검증 완료</em>로, 여전히 동점이면 <em>재검증 — 동점 유지</em>로 표시됩니다.<br>
+        <span style="font-size:0.75rem; color:var(--color-stone);">* server.py (Flask 프록시)가 실행 중이어야 합니다.</span>
+      </p>
+      <div id="wl-reVerifyProgressWrap" style="display:none; margin-bottom:var(--space-md);">
+        <div style="display:flex; justify-content:space-between; font-size:0.8125rem; color:var(--color-charcoal); margin-bottom:4px;">
+          <span id="wl-reVerifyProgressText">재검증 중...</span>
+          <span id="wl-reVerifyProgressPct">0%</span>
+        </div>
+        <div class="wl-reverify-bar"><div class="wl-reverify-fill" id="wl-reVerifyFill"></div></div>
+      </div>
+      <button class="btn-run" id="wl-reVerifyBtn" onclick="runWlReVerify()" style="width:auto; padding:9px 28px;">재검증 시작 ▶</button>
+    </div>
+  </div>
+
 </div><!-- /.container (webLookupPage) -->
 </div><!-- /#webLookupPage -->
 
@@ -917,6 +946,7 @@ let sheetData       = [];
 let headers         = [];
 let resultRows      = [];
 let disambigResolve = null;
+let queryCancelled  = false;
 const MAX_PREVIEW   = 30;
 
 const BIZNO_FREE    = 'https://bizno.net/api/fapi';
@@ -1525,6 +1555,12 @@ function setProgress(text, pct) {
   document.getElementById('progressFill').style.width = Math.round(pct) + '%';
 }
 
+function stopQuery() {
+  queryCancelled = true;
+  document.getElementById('stopBtn').disabled = true;
+  setProgress('중단 요청됨 — 현재 단계 완료 후 정지합니다...', document.getElementById('progressFill').style.width.replace('%','') || 0);
+}
+
 /* ════════════════════════════════════
    메인 조회
    ════════════════════════════════════ */
@@ -1539,7 +1575,11 @@ async function runQuery() {
   const biznoCol = biznoColSel.value;
   const nameCol  = nameColSel.value;
 
+  queryCancelled = false;
   document.getElementById('runBtn').disabled = true;
+  const stopBtn = document.getElementById('stopBtn');
+  stopBtn.style.display = 'inline-block';
+  stopBtn.disabled = false;
   document.getElementById('progressWrap').style.display = 'block';
   setProgress('준비 중...', 0);
 
@@ -1564,6 +1604,7 @@ async function runQuery() {
   const phase1End = nameRows.length > 0 ? 40 : 0;
   const nameResults = [];
   for (let i = 0; i < nameRows.length; i++) {
+    if (queryCancelled) break;
     const { rowIdx, row, name } = nameRows[i];
     setProgress(`[1/2] 회사명 검색 (${i + 1}/${nameRows.length}): ${name}`, (i / nameRows.length) * phase1End);
     try {
@@ -1572,6 +1613,7 @@ async function runQuery() {
     } catch (e) {
       if (e instanceof TypeError) {
         document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
         document.getElementById('runBtn').disabled = false;
         checkRunReady();
         showAlert(runAlert,
@@ -1587,7 +1629,7 @@ async function runQuery() {
   /* ── Disambiguation ── */
   const needsDisambig = nameResults.filter(r => r.candidates && r.candidates.length > 1);
   let disambigSel = {};
-  if (needsDisambig.length > 0) {
+  if (!queryCancelled && needsDisambig.length > 0) {
     document.getElementById('progressWrap').style.display = 'none';
     disambigSel = await showDisambig(needsDisambig);
     document.getElementById('progressWrap').style.display = 'block';
@@ -1618,6 +1660,7 @@ async function runQuery() {
 
   const detailMap = {};
   for (let i = 0; i < allLookup.length; i++) {
+    if (queryCancelled) break;
     const { rowIdx, bizno } = allLookup[i];
     setProgress(`[2/2] 상세 조회 (${i + 1}/${allLookup.length}): ${bizno}`, phase1End + (i / (allLookup.length || 1)) * (98 - phase1End));
     try {
@@ -1626,6 +1669,7 @@ async function runQuery() {
     } catch (e) {
       if (e instanceof TypeError) {
         document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
         document.getElementById('runBtn').disabled = false;
         checkRunReady();
         showAlert(runAlert,
@@ -1638,7 +1682,7 @@ async function runQuery() {
     if (i < allLookup.length - 1) await sleep(300);
   }
 
-  setProgress('완료!', 100);
+  setProgress(queryCancelled ? '중단됨' : '완료!', 100);
 
   /* ── 결과 빌드 ── */
   const failMap = {};
@@ -1663,11 +1707,12 @@ async function runQuery() {
     }
     /* skipRows / nameFailed */
     if (reason) return { ...base, _status: reason };
-    /* 여기에 도달하면 행이 처리 목록에서 누락된 것 (버그 표시) */
-    return { ...base, _status: '처리 누락 (행 인덱스 불일치)' };
+    /* 중단 또는 처리 누락 */
+    return { ...base, _status: queryCancelled ? '조회 중단' : '처리 누락 (행 인덱스 불일치)' };
   });
 
   setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 800);
+  document.getElementById('stopBtn').style.display = 'none';
 
   const successCnt = Object.values(detailMap).filter(d => d.detail).length;
   const failCnt    = sheetData.length - successCnt;
@@ -1817,6 +1862,8 @@ const WL_RECOMMENDED_MAX = 200;
 let wlSheetData    = [];
 let wlHeaders      = [];
 let wlResultRows   = [];
+let wlRunMode      = 'v6';
+let wlColMap       = {};
 let wlReviewResolve = null;
 
 /* ── 프록시 연결 확인 ── */
@@ -2114,6 +2161,9 @@ async function runWebLookup() {
   const phoneCol    = isV6 ? '' : document.getElementById('wl-col-phone').value;
   const addrCol     = isV6 ? '' : document.getElementById('wl-col-address').value;
 
+  wlRunMode = mode;
+  wlColMap  = { company: companyCol, scale: scaleCol, industry: industryCol, rep: repCol, phone: phoneCol, addr: addrCol };
+
   const SCORE_THRESHOLD = isV6
     ? (industryCol ? 100 : 90)
     : 100;
@@ -2199,10 +2249,13 @@ async function runWebLookup() {
     const picks = await wlShowReview(pendingReview);
     document.getElementById('wl-progressWrap').style.display = 'block';
     for (const item of pendingReview) {
-      const chosen = picks[item.rowIdx];
-      if (chosen) {
-        const cand = item.qualified.find(c => c.business_no === chosen);
-        tempResults[item.rowIdx] = { row: item.row, bnoList: cand ? [cand, ...item.qualified.filter(c => c !== cand).slice(0,2)] : item.qualified.slice(0,3), status: '성공' };
+      const chosen = picks[item.rowIdx] || []; // array of selected business_nos
+      if (chosen.length > 0) {
+        const selectedCands = chosen.map(bno => item.qualified.find(c => c.business_no === bno)).filter(Boolean);
+        const rest = item.qualified.filter(c => !chosen.includes(c.business_no));
+        const bnoList = [...selectedCands, ...rest].slice(0, 3);
+        const status  = selectedCands.length > 1 ? '동점 — 복수 선택' : '성공';
+        tempResults[item.rowIdx] = { row: item.row, bnoList, status };
       } else {
         tempResults[item.rowIdx] = { row: item.row, bnoList: item.qualified.slice(0,3), status: '동점 — 자동 선택' };
       }
@@ -2225,7 +2278,7 @@ async function runWebLookup() {
       r[`_closed${i+1}`] = list[i]?.closed         ? '폐업' : '';
     });
     r._status = res.status;
-    if (res.status === '성공' || res.status === '동점 — 자동 선택') successCnt++; else failCnt++;
+    if (res.status === '성공' || res.status === '동점 — 자동 선택' || res.status === '동점 — 복수 선택') successCnt++; else failCnt++;
     return r;
   }).filter(Boolean);
 
@@ -2246,7 +2299,7 @@ function wlShowReview(items) {
       </div>
       ${ties.slice(0, 5).map(c => `
         <label class="wl-cand-option">
-          <input type="radio" name="wl_r_${rowIdx}" value="${esc(c.business_no || '')}" />
+          <input type="checkbox" name="wl_r_${rowIdx}" value="${esc(c.business_no || '')}" />
           <div>
             <div class="wl-cand-name">${esc(c.name || '-')}</div>
             <div class="wl-cand-detail">
@@ -2257,10 +2310,6 @@ function wlShowReview(items) {
           </div>
         </label>
       `).join('')}
-      <label class="wl-skip-opt">
-        <input type="radio" name="wl_r_${rowIdx}" value="" />
-        <span>첫 번째 자동 선택</span>
-      </label>
     </div>
   `).join('');
 
@@ -2273,9 +2322,8 @@ function wlShowReview(items) {
 function wlAutoSelectFirst() {
   document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
     const ridx  = item.dataset.ridx;
-    const radios = [...item.querySelectorAll(`input[name="wl_r_${ridx}"]`)];
-    const first  = radios.find(r => r.value !== '');
-    if (first) { radios.forEach(r => r.checked = false); first.checked = true; }
+    const boxes = [...item.querySelectorAll(`input[name="wl_r_${ridx}"]`)];
+    boxes.forEach((b, i) => { b.checked = i === 0; });
   });
 }
 
@@ -2283,9 +2331,9 @@ function wlConfirmReview() {
   if (!wlReviewResolve) return;
   const picks = {};
   document.querySelectorAll('#wl-reviewList .wl-cand-item').forEach(item => {
-    const ridx    = parseInt(item.dataset.ridx);
-    const checked = item.querySelector('input[type=radio]:checked');
-    picks[ridx] = checked ? checked.value : '';
+    const ridx = parseInt(item.dataset.ridx);
+    picks[ridx] = [...item.querySelectorAll('input[type=checkbox]:checked')]
+      .map(b => b.value).filter(Boolean);
   });
   document.getElementById('wl-reviewOverlay').classList.remove('open');
   wlReviewResolve(picks);
@@ -2319,9 +2367,10 @@ function wlRenderResult(rows, successCnt, failCnt) {
     return '<tr>' + allCols.map(k => {
       const val = row[k] ?? '';
       if (k === '_status') {
-        const ok  = val === '성공' || val === '동점 — 자동 선택';
-        const bg  = ok ? 'var(--color-success-bg)'   : 'var(--color-error-bg)';
-        const clr = ok ? 'var(--color-success-text)'  : 'var(--color-error-text)';
+        const ok   = ['성공', '재검증 완료', '동점 — 자동 선택', '동점 — 복수 선택'].includes(val);
+        const warn = val === '재검증 — 동점 유지';
+        const bg   = ok ? 'var(--color-success-bg)' : warn ? 'var(--color-warn-bg)' : 'var(--color-error-bg)';
+        const clr  = ok ? 'var(--color-success-text)' : warn ? 'var(--color-warn-text)' : 'var(--color-error-text)';
         return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;
       }
       if (k === '_closed1' || k === '_closed2' || k === '_closed3') {
@@ -2335,6 +2384,95 @@ function wlRenderResult(rows, successCnt, failCnt) {
     ? `* 화면에는 ${MAX_PREVIEW}행까지 표시됩니다. 전체 데이터는 다운로드 파일에 포함됩니다.`
     : '';
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  wlShowReVerifyBtnIfNeeded();
+}
+
+/* ── 재검증 ── */
+function wlShowReVerifyBtnIfNeeded() {
+  const tiedCount = wlResultRows.filter(r => r && r._bno2).length;
+  const sec = document.getElementById('wl-reVerifySection');
+  if (tiedCount > 0) {
+    document.getElementById('wl-reVerifyCount').textContent = tiedCount;
+    sec.style.display = 'block';
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function wlSetReVerifyProgress(text, pct) {
+  document.getElementById('wl-reVerifyProgressText').textContent = text;
+  document.getElementById('wl-reVerifyProgressPct').textContent  = Math.round(pct) + '%';
+  document.getElementById('wl-reVerifyFill').style.width         = Math.round(pct) + '%';
+}
+
+async function runWlReVerify() {
+  const btn = document.getElementById('wl-reVerifyBtn');
+  btn.disabled = true;
+  const progressWrap = document.getElementById('wl-reVerifyProgressWrap');
+  progressWrap.style.display = 'block';
+  wlSetReVerifyProgress('준비 중...', 0);
+
+  const tiedIdxs = wlResultRows
+    .map((r, i) => ({ i, r }))
+    .filter(({ r }) => r && r._bno2);
+
+  for (let t = 0; t < tiedIdxs.length; t++) {
+    const { i, r } = tiedIdxs[t];
+    const company  = String(r[wlColMap.company]  ?? '').trim();
+    const scale    = String(r[wlColMap.scale]    ?? '');
+    const industry = String(r[wlColMap.industry] ?? '');
+    const rep      = String(r[wlColMap.rep]      ?? '');
+    const phone    = String(r[wlColMap.phone]    ?? '');
+    const addr     = String(r[wlColMap.addr]     ?? '');
+
+    wlSetReVerifyProgress(`재검증 (${t + 1}/${tiedIdxs.length}): ${company}`, (t / tiedIdxs.length) * 95);
+
+    const bnos = [r._bno1, r._bno2, r._bno3].filter(Boolean);
+    const reCands = [];
+
+    for (const bno of bnos) {
+      const digits = bno.replace(/\D+/g, '');
+      if (digits.length !== 10) continue;
+      const detailUrl = `https://www.bizno.net/article/${digits}`;
+      try {
+        const resp = await fetch(`${PROXY_URL}/detail?url=${encodeURIComponent(detailUrl)}`);
+        if (!resp.ok) continue;
+        const det = await resp.json();
+        if (det.error) continue;
+        const res = wlRunMode === 'v6'
+          ? wlScoreV6(company, scale, industry, det)
+          : wlScorePublic(company, rep, phone, addr, det);
+        reCands.push({ ...det, ...res, business_no: det.business_no || bno });
+      } catch { /* skip failed fetch */ }
+      await sleep(400);
+    }
+
+    if (!reCands.length) continue;
+    reCands.sort((a, b) => b.score - a.score);
+
+    const bestScore = reCands[0].score;
+    const winners   = reCands.filter(c => c.score === bestScore);
+    const newStatus = winners.length === 1 ? '재검증 완료' : '재검증 — 동점 유지';
+
+    const newRow = { ...r };
+    [0, 1, 2].forEach(j => {
+      newRow[`_bno${j+1}`]    = reCands[j]?.business_no                    || '';
+      newRow[`_name${j+1}`]   = reCands[j]?.name                           || '';
+      newRow[`_score${j+1}`]  = reCands[j]?.score != null ? String(reCands[j].score) : '';
+      newRow[`_closed${j+1}`] = reCands[j]?.closed ? '폐업' : '';
+    });
+    newRow._status = newStatus;
+    wlResultRows[i] = newRow;
+  }
+
+  wlSetReVerifyProgress('완료!', 100);
+  setTimeout(() => { progressWrap.style.display = 'none'; }, 700);
+
+  const OK_STATUSES = new Set(['성공', '재검증 완료', '동점 — 자동 선택', '동점 — 복수 선택', '재검증 — 동점 유지']);
+  const successCnt = wlResultRows.filter(r => r && OK_STATUSES.has(r._status)).length;
+  const failCnt    = wlResultRows.length - successCnt;
+  wlRenderResult(wlResultRows, successCnt, failCnt);
+  btn.disabled = false;
 }
 
 /* ── 다운로드 ── */

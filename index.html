@@ -2373,6 +2373,18 @@ function wlRenderResult(rows, successCnt, failCnt) {
         const clr  = ok ? 'var(--color-success-text)' : warn ? 'var(--color-warn-text)' : 'var(--color-error-text)';
         return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:${bg};color:${clr}">${esc(val)}</span></td>`;
       }
+      /* 재검증 후보 컬럼 색상: blue=단독 1위, red=재동점 */
+      const candM = k.match(/^_(bno|name|score|closed)(\d)$/);
+      if (candM && row._rvColor) {
+        const slotIdx = parseInt(candM[2]) - 1;
+        const rvBg = slotIdx < (row._rvWinnerCount || 0)
+          ? (row._rvColor === 'blue' ? '#BDD7EE' : '#FFC7CE') : '';
+        if (rvBg) {
+          if (candM[1] === 'closed' && val === '폐업')
+            return `<td style="background:${rvBg}"><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:var(--color-closed-bg);color:var(--color-closed-text)">${esc(val)}</span></td>`;
+          return `<td style="background:${rvBg}" title="${esc(String(val))}">${esc(String(val))}</td>`;
+        }
+      }
       if (k === '_closed1' || k === '_closed2' || k === '_closed3') {
         if (val === '폐업') return `<td><span style="display:inline-block;padding:3px 8px;border-radius:9999px;font-size:.6875rem;font-weight:600;background:var(--color-closed-bg);color:var(--color-closed-text)">${esc(val)}</span></td>`;
       }
@@ -2461,7 +2473,9 @@ async function runWlReVerify() {
       newRow[`_score${j+1}`]  = reCands[j]?.score != null ? String(reCands[j].score) : '';
       newRow[`_closed${j+1}`] = reCands[j]?.closed ? '폐업' : '';
     });
-    newRow._status = newStatus;
+    newRow._status       = newStatus;
+    newRow._rvColor      = winners.length === 1 ? 'blue' : 'red';
+    newRow._rvWinnerCount = winners.length;
     wlResultRows[i] = newRow;
   }
 

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     :root {
       --color-primary:       #0A0A0A;
@@ -2489,8 +2490,8 @@ async function runWlReVerify() {
   btn.disabled = false;
 }
 
-/* ── 다운로드 ── */
-function wlDownloadResult() {
+/* ── 다운로드 (ExcelJS — 재검증 셀 배경색 포함) ── */
+async function wlDownloadResult() {
   if (!wlResultRows.length) return;
   const inputCols  = wlHeaders;
   const outputCols = ['_bno1','_name1','_score1','_closed1','_bno2','_name2','_score2','_closed2','_bno3','_name3','_score3','_closed3','_status'];
@@ -2500,19 +2501,44 @@ function wlDownloadResult() {
     _bno3:'사업자번호3', _name3:'상호명3', _score3:'점수3', _closed3:'폐업여부3',
     _status:'조회상태',
   };
-  const allCols   = [...inputCols, ...outputCols];
-  const headerRow = allCols.map(k => labelMap[k] || k);
-  const dataRows  = wlResultRows.map(r => allCols.map(k => { const v = r[k]; return v == null ? '' : v; }));
-  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
-  ws['!cols'] = allCols.map(k => ({
-    wch: { _bno1:16, _bno2:16, _bno3:16, _name1:24, _name2:24, _name3:24,
-           _score1:8, _score2:8, _score3:8, _closed1:8, _closed2:8, _closed3:8, _status:16 }[k] || 15
-  }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '사업자번호조회');
+  const colWidths  = {
+    _bno1:16, _bno2:16, _bno3:16, _name1:24, _name2:24, _name3:24,
+    _score1:8, _score2:8, _score3:8, _closed1:8, _closed2:8, _closed3:8, _status:16,
+  };
+  const allCols = [...inputCols, ...outputCols];
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('사업자번호조회');
+
+  /* 열 너비 */
+  ws.columns = allCols.map(k => ({ width: colWidths[k] || 15 }));
+
+  /* 헤더 행 */
+  ws.addRow(allCols.map(k => labelMap[k] || k));
+
+  /* 데이터 행 + 재검증 색상 */
+  wlResultRows.forEach(row => {
+    const exRow = ws.addRow(allCols.map(k => { const v = row[k]; return v == null ? '' : v; }));
+
+    if (row._rvColor) {
+      const argb        = 'FF' + (row._rvColor === 'blue' ? 'BDD7EE' : 'FFC7CE');
+      const winnerCount = row._rvWinnerCount || 0;
+      allCols.forEach((k, ci) => {
+        const m = k.match(/^_(bno|name|score|closed)(\d)$/);
+        if (!m || parseInt(m[2]) - 1 >= winnerCount) return;
+        exRow.getCell(ci + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+      });
+    }
+  });
+
+  /* 파일 저장 */
   const now = new Date();
   const ts  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-  XLSX.writeFile(wb, `비즈노_사업자번호조회_${ts}.xlsx`);
+  const buf  = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a    = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `비즈노_사업자번호조회_${ts}.xlsx` });
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 </script>
 </body>

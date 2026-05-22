@@ -189,9 +189,11 @@
 
     /* ── Progress ── */
     .progress-wrap { display: none; margin-top: var(--space-lg); }
-    .progress-label { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--color-steel); margin-bottom: var(--space-xs); }
+    .progress-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--color-steel); margin-bottom: var(--space-xs); }
     .progress-bar-bg { background: var(--color-hairline); border-radius: var(--rounded-full); height: 6px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: var(--color-brand-coral); border-radius: var(--rounded-full); transition: width .3s ease; width: 0%; }
+    .btn-stop { padding: 4px 14px; background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: var(--rounded-full); font-size: 0.75rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background .15s, color .15s; line-height: 1.4; }
+    .btn-stop:hover { background: #dc2626; color: #fff; }
 
     /* ── Disambiguation ── */
     .disambig-item { border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); overflow: hidden; margin-bottom: var(--space-md); }
@@ -599,7 +601,10 @@
       <div class="progress-wrap" id="progressWrap">
         <div class="progress-label">
           <span id="progressText">처리 중...</span>
-          <span id="progressPct">0%</span>
+          <span style="display:flex; align-items:center; gap:var(--space-sm);">
+            <span id="progressPct">0%</span>
+            <button class="btn-stop" id="stopBtn" onclick="stopQuery()">⏹ 중단</button>
+          </span>
         </div>
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="progressFill"></div>
@@ -941,6 +946,7 @@ let sheetData       = [];
 let headers         = [];
 let resultRows      = [];
 let disambigResolve = null;
+let queryCancelled  = false;
 const MAX_PREVIEW   = 30;
 
 const BIZNO_FREE    = 'https://bizno.net/api/fapi';
@@ -1549,6 +1555,12 @@ function setProgress(text, pct) {
   document.getElementById('progressFill').style.width = Math.round(pct) + '%';
 }
 
+function stopQuery() {
+  queryCancelled = true;
+  document.getElementById('stopBtn').disabled = true;
+  setProgress('중단 요청됨 — 현재 단계 완료 후 정지합니다...', document.getElementById('progressFill').style.width.replace('%','') || 0);
+}
+
 /* ════════════════════════════════════
    메인 조회
    ════════════════════════════════════ */
@@ -1563,7 +1575,11 @@ async function runQuery() {
   const biznoCol = biznoColSel.value;
   const nameCol  = nameColSel.value;
 
+  queryCancelled = false;
   document.getElementById('runBtn').disabled = true;
+  const stopBtn = document.getElementById('stopBtn');
+  stopBtn.style.display = 'inline-block';
+  stopBtn.disabled = false;
   document.getElementById('progressWrap').style.display = 'block';
   setProgress('준비 중...', 0);
 
@@ -1588,6 +1604,7 @@ async function runQuery() {
   const phase1End = nameRows.length > 0 ? 40 : 0;
   const nameResults = [];
   for (let i = 0; i < nameRows.length; i++) {
+    if (queryCancelled) break;
     const { rowIdx, row, name } = nameRows[i];
     setProgress(`[1/2] 회사명 검색 (${i + 1}/${nameRows.length}): ${name}`, (i / nameRows.length) * phase1End);
     try {
@@ -1596,6 +1613,7 @@ async function runQuery() {
     } catch (e) {
       if (e instanceof TypeError) {
         document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
         document.getElementById('runBtn').disabled = false;
         checkRunReady();
         showAlert(runAlert,
@@ -1611,7 +1629,7 @@ async function runQuery() {
   /* ── Disambiguation ── */
   const needsDisambig = nameResults.filter(r => r.candidates && r.candidates.length > 1);
   let disambigSel = {};
-  if (needsDisambig.length > 0) {
+  if (!queryCancelled && needsDisambig.length > 0) {
     document.getElementById('progressWrap').style.display = 'none';
     disambigSel = await showDisambig(needsDisambig);
     document.getElementById('progressWrap').style.display = 'block';
@@ -1642,6 +1660,7 @@ async function runQuery() {
 
   const detailMap = {};
   for (let i = 0; i < allLookup.length; i++) {
+    if (queryCancelled) break;
     const { rowIdx, bizno } = allLookup[i];
     setProgress(`[2/2] 상세 조회 (${i + 1}/${allLookup.length}): ${bizno}`, phase1End + (i / (allLookup.length || 1)) * (98 - phase1End));
     try {
@@ -1650,6 +1669,7 @@ async function runQuery() {
     } catch (e) {
       if (e instanceof TypeError) {
         document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('stopBtn').style.display = 'none';
         document.getElementById('runBtn').disabled = false;
         checkRunReady();
         showAlert(runAlert,
@@ -1662,7 +1682,7 @@ async function runQuery() {
     if (i < allLookup.length - 1) await sleep(300);
   }
 
-  setProgress('완료!', 100);
+  setProgress(queryCancelled ? '중단됨' : '완료!', 100);
 
   /* ── 결과 빌드 ── */
   const failMap = {};
@@ -1687,11 +1707,12 @@ async function runQuery() {
     }
     /* skipRows / nameFailed */
     if (reason) return { ...base, _status: reason };
-    /* 여기에 도달하면 행이 처리 목록에서 누락된 것 (버그 표시) */
-    return { ...base, _status: '처리 누락 (행 인덱스 불일치)' };
+    /* 중단 또는 처리 누락 */
+    return { ...base, _status: queryCancelled ? '조회 중단' : '처리 누락 (행 인덱스 불일치)' };
   });
 
   setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 800);
+  document.getElementById('stopBtn').style.display = 'none';
 
   const successCnt = Object.values(detailMap).filter(d => d.detail).length;
   const failCnt    = sheetData.length - successCnt;
